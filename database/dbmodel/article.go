@@ -15,6 +15,12 @@ type articleRepository struct {
 	db *gorm.DB
 }
 
+type ArticleRepository interface {
+	Create(entry *ArticleEntry) error
+	FindAll() ([]ArticleEntry, error)
+	FindByID(id int) (*ArticleEntry, error)
+}
+
 func NewArticleRepository(db *gorm.DB) *articleRepository {
 	return &articleRepository{db}
 }
