@@ -14,3 +14,30 @@ type ArticleEntry struct {
 type articleRepository struct {
 	db *gorm.DB
 }
+
+func NewArticleRepository(db *gorm.DB) *articleRepository {
+	return &articleRepository{db}
+}
+
+func (r *articleRepository) Create(entry *ArticleEntry) error {
+	if err := r.db.Create(entry).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *articleRepository) FindAll() ([]ArticleEntry, error) {
+	var entries []ArticleEntry
+	if err := r.db.Find(&entries).Error; err != nil {
+		return nil, err
+	}
+	return entries, nil
+}
+
+func (r *articleRepository) FindByID(id int) (*ArticleEntry, error) {
+	var entry ArticleEntry
+	if err := r.db.First(&entry, id).Error; err != nil {
+		return nil, err
+	}
+	return &entry, nil
+}
