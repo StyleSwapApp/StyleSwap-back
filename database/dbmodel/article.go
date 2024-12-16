@@ -11,18 +11,18 @@ type ArticleEntry struct {
 	Description string `json:"article_description"`
 }
 
-type articleRepository struct {
-	db *gorm.DB
-}
-
 type ArticleRepository interface {
 	Create(entry *ArticleEntry) error
 	FindAll() ([]ArticleEntry, error)
 	FindByID(id int) (*ArticleEntry, error)
 }
 
-func NewArticleRepository(db *gorm.DB) *articleRepository {
-	return &articleRepository{db}
+type articleRepository struct {
+	db *gorm.DB
+}
+
+func NewArticleEntryRepository(db *gorm.DB) *articleRepository {
+	return &articleRepository{db: db}
 }
 
 func (r *articleRepository) Create(entry *ArticleEntry) error {

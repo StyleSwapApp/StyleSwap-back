@@ -10,7 +10,8 @@ import (
 )
 
 type Config struct {
-	articleRepository   dbmodel.ArticleRepository
+	// Connexion aux repositories
+	ArticleRepository   dbmodel.ArticleRepository
 }
 
 func New() (*Config, error) {
@@ -25,7 +26,7 @@ func New() (*Config, error) {
     database.Migrate(databaseSession)
 
 	// Initialisation des repositories
-	config.articleRepository = dbmodel.NewArticleRepository(databaseSession)
+	config.ArticleRepository = dbmodel.NewArticleEntryRepository(databaseSession)
 
 	return &config, nil
 }
