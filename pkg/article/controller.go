@@ -24,11 +24,11 @@ func New(configuration *config.Config) *ArticleConfig {
 }
 
 func uploadToS3(file multipart.File, filename string) (string, error) {
-
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-3"),
+		Region: aws.String("eu-west-3"), // Région de ton bucket
 	})
 	if err != nil {
+		fmt.Printf("Session creation failed: %v\n", err)
 		return "", fmt.Errorf("session creation failed: %v", err)
 	}
 
@@ -39,17 +39,19 @@ func uploadToS3(file multipart.File, filename string) (string, error) {
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(file)
 	if err != nil {
+		fmt.Printf("Failed to read file into buffer: %v\n", err)
 		return "", fmt.Errorf("failed to read file into buffer: %v", err)
 	}
 
 	// Télécharger l'image sur S3
 	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String("mon-bucket-images"), // Remplace par ton bucket S3
-		Key:    aws.String(filename),            // Nom du fichier sur S3
-		Body:   bytes.NewReader(buf.Bytes()),    // Contenu du fichier
-		ContentType: aws.String("image/png"),    // Type MIME du fichier
+		Bucket:      aws.String("styleswapbucket"), // Ton bucket S3
+		Key:         aws.String(filename),            // Nom du fichier sur S3
+		Body:        bytes.NewReader(buf.Bytes()),    // Contenu du fichier
+		ContentType: aws.String("image/png"),         // Type MIME de l'image
 	})
 	if err != nil {
+		fmt.Printf("Failed to upload image to S3: %v\n", err)
 		return "", fmt.Errorf("failed to upload image to S3: %v", err)
 	}
 
@@ -58,16 +60,14 @@ func uploadToS3(file multipart.File, filename string) (string, error) {
 	return imageURL, nil
 }
 
-
 func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	// Initialiser la structure ArticleRequest pour lire les données du body
 	req := &model.ArticleRequest{}
-	if err := render.Bind(r, req); err != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
-		return
-	}
+	// if err := render.Bind(r, req); err != nil {
+	// 	render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+	// 	return
+	// }
 
-	// Parse le formulaire multipart (pour pouvoir récupérer le fichier)
 	err := r.ParseMultipartForm(10 << 20) // Limite de taille de 10 Mo pour l'image
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "Unable to parse multipart form"})
