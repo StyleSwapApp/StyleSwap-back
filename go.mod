@@ -4,7 +4,11 @@ go 1.19
 
 require github.com/glebarez/sqlite v1.11.0
 
-require github.com/ajg/form v1.5.1 // indirect
+require (
+	github.com/ajg/form v1.5.1 // indirect
+	github.com/aws/aws-sdk-go v1.55.5 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect

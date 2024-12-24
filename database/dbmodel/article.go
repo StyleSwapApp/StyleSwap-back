@@ -8,7 +8,8 @@ type ArticleEntry struct {
 	gorm.Model
 	Name 		string  `json:"article_name"`
 	Price 		int 	`json:"article_price"`
-	Description string `json:"article_description"`
+	Description string  `json:"article_description"`
+	ImageURL    string  `json:"article_image"`
 }
 
 type ArticleRepository interface {
