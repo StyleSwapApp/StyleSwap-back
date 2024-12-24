@@ -3,16 +3,17 @@ package article
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
-	"StyleSwap/pkg/model"
 	"bytes"
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 )
 
 type ArticleConfig struct {
@@ -45,10 +46,10 @@ func uploadToS3(file multipart.File, filename string) (string, error) {
 
 	// Télécharger l'image sur S3
 	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Bucket:      aws.String("styleswapbucket"), // Ton bucket S3
-		Key:         aws.String(filename),            // Nom du fichier sur S3
-		Body:        bytes.NewReader(buf.Bytes()),    // Contenu du fichier
-		ContentType: aws.String("image/png"),         // Type MIME de l'image
+		Bucket:      aws.String("styleswapbucket"),
+		Key:         aws.String(filename),         // Nom du fichier sur S3
+		Body:        bytes.NewReader(buf.Bytes()), // Contenu du fichier
+		ContentType: aws.String("image/png"),      // Type MIME de l'image
 	})
 	if err != nil {
 		fmt.Printf("Failed to upload image to S3: %v\n", err)
@@ -61,16 +62,26 @@ func uploadToS3(file multipart.File, filename string) (string, error) {
 }
 
 func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Request) {
-	// Initialiser la structure ArticleRequest pour lire les données du body
-	req := &model.ArticleRequest{}
-	// if err := render.Bind(r, req); err != nil {
-	// 	render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
-	// 	return
-	// }
-
+	// Parse la requête multipart pour obtenir les données de formulaire
 	err := r.ParseMultipartForm(10 << 20) // Limite de taille de 10 Mo pour l'image
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "Unable to parse multipart form"})
+		return
+	}
+
+	// Récupérer les champs de texte du formulaire
+	name := r.FormValue("name")
+	priceStr := r.FormValue("price")
+	price, err := strconv.Atoi(priceStr)
+	if err != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid price format"})
+		return
+	}
+	description := r.FormValue("description")
+
+	// Vérification que tous les champs sont fournis
+	if name == "" || price == 0 || description == "" {
+		render.JSON(w, r, map[string]string{"error": "Missing required fields"})
 		return
 	}
 
@@ -82,10 +93,11 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	}
 	defer file.Close()
 
-	// Nom du fichier pour S3
-	filename := fmt.Sprintf("%s.png", req.Name) // Utiliser le nom de l'article comme base
+	// Générer un nom unique pour le fichier sur S3
+	uniqueID := uuid.New().String()
+	filename := fmt.Sprintf("%s.png", uniqueID) // Utiliser un nom unique pour éviter les collisions
 
-	// Télécharger le fichier sur S3
+	// Télécharger l'image sur S3
 	imageURL, err := uploadToS3(file, filename)
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "Failed to upload image to S3"})
@@ -94,9 +106,9 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
-		Name:        req.Name,
-		Price:       req.Price,
-		Description: req.Description,
+		Name:        name,
+		Price:       price,
+		Description: description,
 		ImageURL:    imageURL,
 	}
 
