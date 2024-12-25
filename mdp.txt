@@ -1,0 +1,5 @@
+MariaDB
+
+id instance bdd > mariadb-instance
+id principal > StyleSwapRoot
+mdp > PassStyleSwap
