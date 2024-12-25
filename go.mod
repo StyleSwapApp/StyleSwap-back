@@ -7,6 +7,7 @@ require github.com/glebarez/sqlite v1.11.0
 require (
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
 
@@ -21,6 +22,7 @@ require (
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/sys v0.7.0 // indirect
+	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.7 // indirect
 	modernc.org/libc v1.22.5 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
