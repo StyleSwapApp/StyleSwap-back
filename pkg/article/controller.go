@@ -69,7 +69,16 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Récupérer les champs de texte du formulaire
+	username := r.FormValue("userPseudo")
+	user, err := config.UserRepository.FindByPseudo(username)
+	if err != nil {	
+		render.JSON(w, r, map[string]string{"error": "User not found"})
+		return
+	}
+	if user == "" {
+		render.JSON(w, r, map[string]string{"error": "User not found"})
+		return
+	}
 	name := r.FormValue("name")
 	priceStr := r.FormValue("price")
 	price, err := strconv.Atoi(priceStr)
@@ -106,10 +115,11 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
-		Name:        name,
-		Price:       price,
-		Description: description,
-		ImageURL:    imageURL,
+		PseudoUser:		user,
+		Name:			name,
+		Price:      	price,
+		Description:	description,
+		ImageURL:    	imageURL,
 	}
 
 	// Ajouter l'article à la base de données
@@ -120,4 +130,31 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Répondre avec un message de succès
 	render.JSON(w, r, map[string]string{"message": "Article added successfully", "image_url": imageURL})
+}
+
+func (config *ArticleConfig) GetArticles(w http.ResponseWriter, r *http.Request) {
+	Pseudo := r.URL.Query().Get("UserPseudo")
+	var articles []dbmodel.ArticleEntry
+	var err error
+	if Pseudo != "" {
+		articles, err = config.ArticleRepository.FindByPseudo(Pseudo)
+	} else {
+		articles, err = config.ArticleRepository.FindAll()
+	}
+
+	if err != nil {
+		render.JSON(w, r, map[string]string{"error": "Error while fetching articles from the database"})
+		return
+	}
+
+	for _, article := range articles {
+		res := dbmodel.ArticleEntry{
+			PseudoUser:  article.PseudoUser,
+			Name:        article.Name,
+			Price:       article.Price,
+			Description: article.Description,
+			ImageURL:    article.ImageURL,
+		}
+		render.JSON(w, r, res)
+	}
 }

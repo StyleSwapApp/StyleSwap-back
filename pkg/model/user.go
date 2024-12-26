@@ -10,6 +10,7 @@ type UserRequest struct {
 	UserLName  	string  `json:"userlname"`
 	UserEmail 	string 	`json:"useremail"`
 	UserPW 		string 	`json:"userpw"`
+	Pseudo      string  `json:"pseudo"`
 	BirthDate 	string 	`json:"birthdate"`
 }
 

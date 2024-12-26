@@ -1,21 +1,25 @@
 package dbmodel
 
 import (
+	"errors"
+
 	"gorm.io/gorm"
 )
 
 type ArticleEntry struct {
 	gorm.Model
-	Name 		string  `json:"article_name"`
-	Price 		int 	`json:"article_price"`
-	Description string  `json:"article_description"`
-	ImageURL    string  `json:"article_image"`
+	PseudoUser 	string		`json:"user_pseudo"`
+	Name 		string  	`json:"article_name"`
+	Price 		int 		`json:"article_price"`
+	Description string  	`json:"article_description"`
+	ImageURL    string  	`json:"article_image"`
 }
 
 type ArticleRepository interface {
 	Create(entry *ArticleEntry) error
 	FindAll() ([]ArticleEntry, error)
 	FindByID(id int) (*ArticleEntry, error)
+	FindByPseudo(pseudo string) ([]ArticleEntry, error)
 }
 
 type articleRepository struct {
@@ -27,6 +31,9 @@ func NewArticleEntryRepository(db *gorm.DB) *articleRepository {
 }
 
 func (r *articleRepository) Create(entry *ArticleEntry) error {
+	if entry.PseudoUser == "" {
+		return errors.New("missing required IDUser fields")
+	}
 	if err := r.db.Create(entry).Error; err != nil {
 		return err
 	}
@@ -47,4 +54,12 @@ func (r *articleRepository) FindByID(id int) (*ArticleEntry, error) {
 		return nil, err
 	}
 	return &entry, nil
+}
+
+func (r *articleRepository) FindByPseudo(pseudo string) ([]ArticleEntry, error) {
+	var entries []ArticleEntry
+	if err := r.db.Where("pseudo = ?", pseudo).Find(&entries).Error; err != nil {
+		return nil, err
+	}
+	return entries, nil
 }

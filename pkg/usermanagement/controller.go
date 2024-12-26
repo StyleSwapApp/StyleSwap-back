@@ -38,6 +38,7 @@ func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 		LName: req.UserLName,
 		UserEmail: req.UserEmail,
 		Password: HASH,
+		Pseudo: req.Pseudo,
 		BirthDate: dateB,
 	}
 	config.UserRepository.Create(userEntry)

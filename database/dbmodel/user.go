@@ -8,10 +8,11 @@ import (
 
 type UserEntry struct {
 	gorm.Model
-	FName     string `json:"user_first_name"`
-	LName     string `json:"user_last_name"`
-	UserEmail string `json:"user_email"`
-	Password  string `json:"user_password"`
+	FName     string 	`json:"user_first_name"`
+	LName     string 	`json:"user_last_name"`
+	UserEmail string 	`json:"user_email"`
+	Password  string 	`json:"user_password"`
+	Pseudo    string 	`json:"pseudo"`
 	BirthDate time.Time `json:"user_birthdate"`
 }
 
@@ -22,6 +23,7 @@ type UserRepository interface {
 	Update(entry *UserEntry) error
 	Delete(id int) error
 	FindByEmail(email string) (*UserEntry, error)
+	FindByPseudo(pseudo string) (string, error)
 }
 
 type userRepository struct {
@@ -67,6 +69,14 @@ func (r *userRepository) Delete(id int) error {
 		return err
 	}
 	return nil
+}
+
+func (r *userRepository) FindByPseudo(pseudo string) (string, error) {
+	var entry UserEntry
+	if err := r.db.Where("pseudo = ?", pseudo).First(&entry).Error; err != nil {
+		return "", err
+	}
+	return pseudo, nil
 }
 
 func (r *userRepository) FindByEmail(email string) (*UserEntry, error) {
