@@ -12,6 +12,7 @@ import (
 type Config struct {
 	// Connexion aux repositories
 	ArticleRepository   dbmodel.ArticleRepository
+	UserRepository 		dbmodel.UserRepository
 }
 
 func New() (*Config, error) {
