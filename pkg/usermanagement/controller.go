@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-chi/render"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserConfig struct {
@@ -30,12 +31,22 @@ func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w,r,map[string]string{"error": "Invalid date format"})
 		return 
 	}
+
+	HASH := hashedPassword(req.UserPW)
 	userEntry := &dbmodel.UserEntry{
 		FName: req.UserFName,
 		LName: req.UserLName,
 		UserEmail: req.UserEmail,
-		Password: req.UserPW,
+		Password: HASH,
 		BirthDate: dateB,
 	}
 	config.UserRepository.Create(userEntry)
+}
+
+func hashedPassword(password string) string {
+	bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return ""
+	}
+	return string(bcryptPassword)
 }
