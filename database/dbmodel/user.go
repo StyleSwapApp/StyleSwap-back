@@ -1,21 +1,27 @@
 package dbmodel
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
 type UserEntry struct {
 	gorm.Model
-	FName     string `json:"article_name"`
-	LName     string `json:"article_price"`
-	UserEmail string `json:"article_description"`
-	Password  string `json:"article_image"`
+	FName     string `json:"user_first_name"`
+	LName     string `json:"user_last_name"`
+	UserEmail string `json:"user_email"`
+	Password  string `json:"user_password"`
+	BirthDate time.Time `json:"user_birthdate"`
 }
 
 type UserRepository interface {
-	Create(entry *ArticleEntry) error
-	FindAll() ([]ArticleEntry, error)
-	FindByID(id int) (*ArticleEntry, error)
+	Create(entry *UserEntry) error
+	FindAll() ([]UserEntry, error)
+	FindByID(id int) (*UserEntry, error)
+	Update(entry *UserEntry) error
+	Delete(id int) error
+	FindByEmail(email string) (*UserEntry, error)
 }
 
 type userRepository struct {
@@ -48,3 +54,26 @@ func (r *userRepository) FindByID(id int) (*UserEntry, error) {
 	}
 	return &entry, nil
 }
+
+func (r *userRepository) Update(entry *UserEntry) error {
+	if err := r.db.Save(entry).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *userRepository) Delete(id int) error {
+	if err := r.db.Delete(&UserEntry{}, id).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *userRepository) FindByEmail(email string) (*UserEntry, error) {
+	var entry UserEntry
+	if err := r.db.Where("user_email = ?", email).First(&entry).Error; err != nil {
+		return nil, err
+	}
+	return &entry, nil
+}
+

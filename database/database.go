@@ -23,6 +23,7 @@ func InitDatabase() {
 func Migrate(db *gorm.DB) {
     db.AutoMigrate(
         &dbmodel.ArticleEntry{},
+        &dbmodel.UserEntry{},
     )
     log.Println("Database migrated successfully")
 }

@@ -30,5 +30,9 @@ func (a *UserRequest) Bind(r *http.Request) error {
 }
 
 type UserResponse struct {
-
+	UserFName 	string 	`json:"userfname"`
+	UserLName  	string  `json:"userlname"`
+	UserEmail 	string 	`json:"useremail"`
+	BirthDate 	string 	`json:"birthdate"`
+	Article     []string `json:"articles"`
 }

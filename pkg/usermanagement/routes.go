@@ -10,7 +10,7 @@ func Routes(configuration *config.Config) *chi.Mux{
 	userConfig := New(configuration)
 	router := chi.NewRouter()
 
-	router.Post("/newUser", userConfig.ArticleHandler)
+	router.Post("/newUser", userConfig.UserHandler)
 
 	return router
 }
