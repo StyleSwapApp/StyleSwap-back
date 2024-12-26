@@ -28,6 +28,7 @@ func New() (*Config, error) {
 
 	// Initialisation des repositories
 	config.ArticleRepository = dbmodel.NewArticleEntryRepository(databaseSession)
+	config.UserRepository = dbmodel.NewUSerEntryRepository(databaseSession)
 
 	return &config, nil
 }
