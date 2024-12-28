@@ -5,12 +5,12 @@ import (
 	"net/http"
 )
 
-type ArticleRequest struct {
+type ArticleDeleteRequest struct {
 	ArtileId int `json:"article_id"`
 	ImageURL string `json:"image_url"`
 }
 
-func (a *ArticleRequest) Bind(r *http.Request) error {
+func (a *ArticleDeleteRequest) Bind(r *http.Request) error {
 	if a.ArtileId == 0 {
 		return errors.New("missing required ArticleId fields")
 	}

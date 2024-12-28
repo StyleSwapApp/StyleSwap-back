@@ -118,7 +118,7 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 }
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
-	req := &model.ArticleRequest{}
+	req := &model.ArticleDeleteRequest{}
 	if errRequest := render.Bind(r, req); errRequest != nil {
 		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
 		return
