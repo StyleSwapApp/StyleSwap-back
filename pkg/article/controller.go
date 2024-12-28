@@ -3,15 +3,10 @@ package article
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
-	"bytes"
+	"StyleSwap/pkg/model"
 	"fmt"
-	"mime/multipart"
 	"net/http"
 	"strconv"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 )
@@ -22,43 +17,6 @@ type ArticleConfig struct {
 
 func New(configuration *config.Config) *ArticleConfig {
 	return &ArticleConfig{configuration}
-}
-
-func uploadToS3(file multipart.File, filename string) (string, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-3"), // Région de ton bucket
-	})
-	if err != nil {
-		fmt.Printf("Session creation failed: %v\n", err)
-		return "", fmt.Errorf("session creation failed: %v", err)
-	}
-
-	// Créer un client S3
-	s3Client := s3.New(sess)
-
-	// Créer un buffer pour lire le fichier
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(file)
-	if err != nil {
-		fmt.Printf("Failed to read file into buffer: %v\n", err)
-		return "", fmt.Errorf("failed to read file into buffer: %v", err)
-	}
-
-	// Télécharger l'image sur S3
-	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Bucket:      aws.String("styleswapbucket"),
-		Key:         aws.String(filename),         // Nom du fichier sur S3
-		Body:        bytes.NewReader(buf.Bytes()), // Contenu du fichier
-		ContentType: aws.String("image/png"),      // Type MIME de l'image
-	})
-	if err != nil {
-		fmt.Printf("Failed to upload image to S3: %v\n", err)
-		return "", fmt.Errorf("failed to upload image to S3: %v", err)
-	}
-
-	// Retourner l'URL S3 de l'image
-	imageURL := fmt.Sprintf("https://%s.s3.eu-west-3.amazonaws.com/%s", "styleswapbucket", filename)
-	return imageURL, nil
 }
 
 func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +90,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	render.JSON(w, r, map[string]string{"message": "Article added successfully", "image_url": imageURL})
 }
 
-func (config *ArticleConfig) GetArticles(w http.ResponseWriter, r *http.Request) {
+func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.Request) {
 	Pseudo := r.URL.Query().Get("UserPseudo")
 	var articles []dbmodel.ArticleEntry
 	var err error
@@ -148,13 +106,34 @@ func (config *ArticleConfig) GetArticles(w http.ResponseWriter, r *http.Request)
 	}
 
 	for _, article := range articles {
-		res := dbmodel.ArticleEntry{
-			PseudoUser:  article.PseudoUser,
-			Name:        article.Name,
-			Price:       article.Price,
-			Description: article.Description,
-			ImageURL:    article.ImageURL,
+		res := model.ArticleResponse{
+			UserPseudo:  			article.PseudoUser,
+			ArticleName:			article.Name,
+			ArticlePrice:       	article.Price,
+			ArticleDescription: 	article.Description,
+			ArticleImage:    		article.ImageURL,
 		}
 		render.JSON(w, r, res)
+	}
+}
+
+func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.ArticleRequest{}
+	if errRequest := render.Bind(r, req); errRequest != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+	errBucket := config.DeleteImageFromS3(req.ImageURL)
+
+	if errBucket != nil {
+		render.JSON(w, r, map[string]string{"error": "Error while deleting image from S3"})
+		return
+	}
+
+	errBDD := config.ArticleRepository.Delete(req.ArtileId)
+
+	if errBDD != nil {
+		render.JSON(w, r, map[string]string{"error": "Error while deleting article from the database"})
+		return
 	}
 }

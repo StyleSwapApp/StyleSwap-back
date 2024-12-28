@@ -20,6 +20,7 @@ type ArticleRepository interface {
 	FindAll() ([]ArticleEntry, error)
 	FindByID(id int) (*ArticleEntry, error)
 	FindByPseudo(pseudo string) ([]ArticleEntry, error)
+	Delete(id int) error
 }
 
 type articleRepository struct {
@@ -62,4 +63,11 @@ func (r *articleRepository) FindByPseudo(pseudo string) ([]ArticleEntry, error) 
 		return nil, err
 	}
 	return entries, nil
+}
+
+func (r *articleRepository) Delete(id int) error {
+	if err := r.db.Delete(&ArticleEntry{}, id).Error; err != nil {
+		return err
+	}
+	return nil
 }
