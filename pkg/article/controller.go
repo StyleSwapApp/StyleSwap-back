@@ -94,28 +94,39 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 	Pseudo := r.URL.Query().Get("UserPseudo")
 	var articles []dbmodel.ArticleEntry
 	var err error
+
+	// Recherche des articles en fonction du paramètre UserPseudo
 	if Pseudo != "" {
 		articles, err = config.ArticleRepository.FindByPseudo(Pseudo)
 	} else {
 		articles, err = config.ArticleRepository.FindAll()
 	}
 
+	// Gestion des erreurs si la recherche échoue
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "Error while fetching articles from the database"})
 		return
 	}
 
+	// Créer un tableau pour contenir toutes les réponses d'articles
+	var articleResponses []model.ArticleResponse
+
+	// Préparer les données de réponse
 	for _, article := range articles {
 		res := model.ArticleResponse{
-			UserPseudo:  			article.PseudoUser,
-			ArticleName:			article.Name,
-			ArticlePrice:       	article.Price,
-			ArticleDescription: 	article.Description,
-			ArticleImage:    		article.ImageURL,
+			UserPseudo:         article.PseudoUser,
+			ArticleName:        article.Name,
+			ArticlePrice:       article.Price,
+			ArticleDescription: article.Description,
+			ArticleImage:       article.ImageURL,
 		}
-		render.JSON(w, r, res)
+		articleResponses = append(articleResponses, res)
 	}
+
+	// Renvoyer tous les articles dans une seule réponse
+	render.JSON(w, r, articleResponses)
 }
+
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
 	req := &model.ArticleDeleteRequest{}

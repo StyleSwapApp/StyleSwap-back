@@ -2,17 +2,18 @@ package dbmodel
 
 import (
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 )
 
 type ArticleEntry struct {
 	gorm.Model
-	PseudoUser 	string		`json:"user_pseudo"`
-	Name 		string  	`json:"article_name"`
-	Price 		int 		`json:"article_price"`
-	Description string  	`json:"article_description"`
-	ImageURL    string  	`json:"article_image"`
+	PseudoUser  string `json:"user_pseudo"`
+	Name        string `json:"article_name"`
+	Price       int    `json:"article_price"`
+	Description string `json:"article_description"`
+	ImageURL    string `json:"article_image"`
 }
 
 type ArticleRepository interface {
@@ -59,7 +60,8 @@ func (r *articleRepository) FindByID(id int) (*ArticleEntry, error) {
 
 func (r *articleRepository) FindByPseudo(pseudo string) ([]ArticleEntry, error) {
 	var entries []ArticleEntry
-	if err := r.db.Where("pseudo = ?", pseudo).Find(&entries).Error; err != nil {
+	if err := r.db.Where("pseudo_user = ?", pseudo).Find(&entries).Error; err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	return entries, nil

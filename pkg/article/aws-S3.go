@@ -38,6 +38,7 @@ func uploadToS3(file multipart.File, filename string) (string, error) {
 		Key:         aws.String(filename),         // Nom du fichier sur S3
 		Body:        bytes.NewReader(buf.Bytes()), // Contenu du fichier
 		ContentType: aws.String("image/png"),      // Type MIME de l'image
+		ACL:         aws.String("public-read"),    // Permissions de l'image
 	})
 	if err != nil {
 		fmt.Printf("Failed to upload image to S3: %v\n", err)
@@ -50,7 +51,7 @@ func uploadToS3(file multipart.File, filename string) (string, error) {
 }
 
 func extractS3KeyFromURL(s3URL string) (string, error) {
-	// Vérifier si l'URL commence bien par le préfixe 
+	// Vérifier si l'URL commence bien par le préfixe
 	const s3Prefix = "https://styleswapbucket.s3.eu-west-3.amazonaws.com/"
 	if !strings.HasPrefix(s3URL, s3Prefix) {
 		return "", fmt.Errorf("URL S3 invalide")
@@ -80,7 +81,7 @@ func (config *ArticleConfig) DeleteImageFromS3(UrlImage string) error {
 
 	deleteObjectInput := &s3.DeleteObjectInput{
 		Bucket: aws.String("styleswapbucket"),
-		Key:    aws.String(imageKey), 
+		Key:    aws.String(imageKey),
 	}
 
 	_, err = s3Client.DeleteObject(deleteObjectInput)
