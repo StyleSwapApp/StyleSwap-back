@@ -1,30 +1,36 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 )
 
 type UserRequest struct {
-	UserFName 	string 	`json:"userfname"`
-	UserLName  	string  `json:"userlname"`
-	UserEmail 	string 	`json:"useremail"`
-	UserPW 		string 	`json:"userpw"`
-	Pseudo      string  `json:"pseudo"`
-	BirthDate 	string 	`json:"birthdate"`
+	UserFName string `json:"userfname"`
+	UserLName string `json:"userlname"`
+	UserEmail string `json:"useremail"`
+	UserPW    string `json:"userpw"`
+	Pseudo    string `json:"pseudo"`
+	BirthDate string `json:"birthdate"`
 }
 
 type LoginRequest struct {
-	UserEmail 	string 	`json:"useremail"`
-	Pseudo 		string  `json:"pseudo"`
-	UserPW 		string 	`json:"userpw"`
+	UserEmail string `json:"useremail"`
+	Pseudo    string `json:"pseudo"`
+	UserPW    string `json:"userpw"`
 }
 
-func (a *LoginRequest) Bind(r *http.Request) error {
-	if a.UserEmail == "" || a.Pseudo == "" {
+func (b *LoginRequest) Bind(r *http.Request) error {
+	err := json.NewDecoder(r.Body).Decode(b)
+	if err != nil {
+		return errors.New("failed to decode JSON")
+	}
+
+	if b.UserEmail == "" && b.Pseudo == "" {
 		return errors.New("missing required fields ( UserEmail or Pseudo )")
-	}	
-	if a.UserPW == "" {
+	}
+	if b.UserPW == "" {
 		return errors.New("missing required UserPW fields")
 	}
 	return nil
@@ -47,9 +53,9 @@ func (a *UserRequest) Bind(r *http.Request) error {
 }
 
 type UserResponse struct {
-	UserFName 	string 	`json:"userfname"`
-	UserLName  	string  `json:"userlname"`
-	UserEmail 	string 	`json:"useremail"`
-	BirthDate 	string 	`json:"birthdate"`
-	Article     []string `json:"articles"`
+	UserFName string   `json:"userfname"`
+	UserLName string   `json:"userlname"`
+	UserEmail string   `json:"useremail"`
+	BirthDate string   `json:"birthdate"`
+	Article   []string `json:"articles"`
 }
