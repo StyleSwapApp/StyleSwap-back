@@ -141,7 +141,7 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	errBDD := config.ArticleRepository.Delete(req.ArtileId)
+	errBDD := config.ArticleRepository.Delete(req.ArticleId)
 
 	if errBDD != nil {
 		render.JSON(w, r, map[string]string{"error": "Error while deleting article from the database"})

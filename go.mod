@@ -19,6 +19,7 @@ require (
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/go-chi/render v1.0.3
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect

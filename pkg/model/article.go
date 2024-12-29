@@ -6,12 +6,12 @@ import (
 )
 
 type ArticleDeleteRequest struct {
-	ArtileId int `json:"article_id"`
+	ArticleId int `json:"article_id"`
 	ImageURL string `json:"image_url"`
 }
 
 func (a *ArticleDeleteRequest) Bind(r *http.Request) error {
-	if a.ArtileId == 0 {
+	if a.ArticleId == 0 {
 		return errors.New("missing required ArticleId fields")
 	}
 	return nil

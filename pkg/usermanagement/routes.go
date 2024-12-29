@@ -11,6 +11,7 @@ func Routes(configuration *config.Config) *chi.Mux{
 	router := chi.NewRouter()
 
 	router.Post("/newUser", userConfig.UserHandler)
+	router.Get("/login", userConfig.LoginHandler)
 
 	return router
 }

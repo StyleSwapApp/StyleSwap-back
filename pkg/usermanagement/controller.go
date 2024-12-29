@@ -3,7 +3,9 @@ package usermanagement
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
+	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -22,26 +24,62 @@ func New(configuration *config.Config) *UserConfig {
 func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 	req := &model.UserRequest{}
 	if err := render.Bind(r, req); err != nil {
-		render.JSON(w,r,map[string]string{"error": "Invalid request payload"})
-		return 
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
 	}
 
 	dateB, err := time.Parse("2006-01-02", req.BirthDate)
 	if err != nil {
-		render.JSON(w,r,map[string]string{"error": "Invalid date format"})
-		return 
+		render.JSON(w, r, map[string]string{"error": "Invalid date format"})
+		return
 	}
 
 	HASH := hashedPassword(req.UserPW)
 	userEntry := &dbmodel.UserEntry{
-		FName: req.UserFName,
-		LName: req.UserLName,
+		FName:     req.UserFName,
+		LName:     req.UserLName,
 		UserEmail: req.UserEmail,
-		Password: HASH,
-		Pseudo: req.Pseudo,
+		Password:  HASH,
+		Pseudo:    req.Pseudo,
 		BirthDate: dateB,
 	}
 	config.UserRepository.Create(userEntry)
+}
+
+func (config *UserConfig) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.LoginRequest{}
+	if err := req.Bind(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	loginEntry, err := config.UserRepository.FindAll()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	for _, entry := range loginEntry {
+		if entry.Pseudo == req.Pseudo || entry.UserEmail == req.UserEmail {
+			if bcrypt.CompareHashAndPassword([]byte(entry.Password), []byte(req.UserPW)) == nil {
+				var token string
+				if req.UserEmail == "" {
+					token, err = auth.GenerateToken("StyleSwap", req.Pseudo)
+				} else {
+					token, err = auth.GenerateToken("StyleSwap", req.UserEmail)
+				}
+				if err != nil {
+					http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+					return
+				}
+				render.JSON(w, r, "bien connecté")
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(map[string]string{"token": token})
+				return
+			}
+		}
+	}
+	http.Error(w, "Invalid Email/Pseudo or password", http.StatusUnauthorized)
 }
 
 func hashedPassword(password string) string {
