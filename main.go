@@ -18,8 +18,7 @@ func Routes(configuration *config.Config) *chi.Mux {
 	router.Mount("/api/v1/login", usermanagement.Routes(configuration)) // Route non protégée
 
 	// Protéger les routes spécifiques avec le middleware d'authentification
-	// Appliquer le middleware avant de monter les routes protégées
-	router.Group(func(r chi.Router) {
+	router.Group(func(r chi.Router) { 
 		r.Use(auth.AuthMiddleware("StyleSwap"))
 		r.Mount("/api/v1/articles", article.Routes(configuration))
 		r.Mount("/api/v1/user", usermanagement.Routes(configuration))
