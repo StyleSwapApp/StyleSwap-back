@@ -13,6 +13,7 @@ type Config struct {
 	// Connexion aux repositories
 	ArticleRepository   dbmodel.ArticleRepository
 	UserRepository 		dbmodel.UserRepository
+	MessageRepository 	dbmodel.MessageRepository
 }
 
 func New() (*Config, error) {
@@ -29,6 +30,7 @@ func New() (*Config, error) {
 	// Initialisation des repositories
 	config.ArticleRepository = dbmodel.NewArticleEntryRepository(databaseSession)
 	config.UserRepository = dbmodel.NewUSerEntryRepository(databaseSession)
+	config.MessageRepository = dbmodel.NewMessageEntryRepository(databaseSession)
 
 	return &config, nil
 }
