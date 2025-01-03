@@ -3,14 +3,13 @@ package chat
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
+	"StyleSwap/pkg/model"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"gorm.io/gorm"
 )
 
 // Structure pour stocker les connexions WebSocket
@@ -35,35 +34,8 @@ var (
 			return true
 		},
 	}
-	db *gorm.DB
 )
 
-type UserMessage struct {
-    UserID string `json:"userID"`
-}
-
-func (config *MessageConfig) sendPendingMessages(userID string, conn *websocket.Conn) {
-	// Récupérer les messages non livrés pour ce client
-	
-	Messages, err := config.MessageRepository.FindDelivered(userID)
-	fmt.Println(Messages)
-	if err != nil {
-		log.Println("Erreur lors de la récupération des messages non livrés:", err)
-		return
-	}
-
-	// Envoyer les messages non livrés au client
-	for _, msg := range Messages {
-		err := conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Notification: %s", msg.Content)))
-		if err != nil {
-			log.Println("Erreur lors de l'envoi de la notification de message:", err)
-			break
-		}
-		// Marquer le message comme livré après l'envoi
-		msg.Delivered = true
-		db.Save(&msg)
-	}
-}
 
 func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Mettre à niveau la connexion HTTP vers WebSocket
@@ -75,8 +47,13 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 	}
 	defer conn.Close()
 
-	var req UserMessage
-	errRead := conn.ReadJSON(&req)
+	var reqAuth model.AuthedRequest
+	errRead := conn.ReadJSON(&reqAuth)
+
+	if reqAuth.Bind(r) != nil {
+		log.Println("Champ manquant dans la requête")
+		return
+	}
 
 	if errRead != nil {
 		log.Printf("Erreur lors de la lecture de l'ID de l'utilisateur: %v\n", err)
@@ -84,110 +61,108 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 	}
 
 	clientsLock.Lock()
-	if _, exists := clients[req.UserID]; exists {
+	if _, exists := clients[reqAuth.UserID]; exists {
 		log.Println("Cet utilisateur est déjà connecté.")
 		clientsLock.Unlock()
-		return 
+		return
 	}
-	clients[req.UserID] = &Client{ID: req.UserID, Conn: conn}
+	clients[reqAuth.UserID] = &Client{ID: reqAuth.UserID, Conn: conn}
 	clientsLock.Unlock()
 
-
-	// Ajouter le client à la map des connexions actives
-	clientsLock.Lock()
-	clients[req.UserID] = &Client{ID: req.UserID, Conn: conn}
-	clientsLock.Unlock()
-
-	fmt.Printf("Client %s connecté\n", req.UserID)
-
-	config.sendPendingMessages(req.UserID, conn)
+	fmt.Printf("Client %s connecté\n", reqAuth.UserID)
 
 	if config.MessageRepository == nil {
 		log.Fatal("Base de données non initialisée")
 		return
-	}	
+	}
 
-	// Écouter les messages entrants et les rediriger vers le destinataire
 	for {
-		var msg string
-		_, msgBytes, err := conn.ReadMessage()
+		var req model.MessageRequest
+		err := conn.ReadJSON(&req)
 		if err != nil {
-			log.Println("Erreur WebSocket:", err)
+			log.Println("Erreur lors de la lecture du message:", err)
 			break
 		}
-		msg = string(msgBytes)
 
-		// Le message doit être au format "receiverID:message"
-		// Exemple : "client2:Hello"
-		destID, content := parseMessage(msg)
+		if req.Bind(r) != nil {
+			log.Println("Champ manquant dans la requête")
+			continue
+		}
 
-		// Sauvegarder le message dans la base de données
 		message := dbmodel.Messages{
-			SenderID:   req.UserID,
-			ReceiverID: destID,
-			Content:    content,
+			SenderID:   reqAuth.UserID,
+			ReceiverID: req.ReceiverID,
+			Content:    req.Content,
 		}
 		config.MessageRepository.Create(&message)
-
-		// Envoyer le message au destinataire si connecté
+		
+		// Vérifier si le destinataire est connecté
 		clientsLock.Lock()
-		destClient, ok := clients[destID]
+		destClient, ok := clients[req.ReceiverID]
 		clientsLock.Unlock()
 
 		if ok {
 			// Si le destinataire est connecté, envoyer le message
-			err := destClient.Conn.WriteMessage(websocket.TextMessage, []byte(content))
+			err := destClient.Conn.WriteMessage(websocket.TextMessage, []byte(req.Content))
 			if err != nil {
 				log.Println("Erreur lors de l'envoi du message au destinataire:", err)
 			}
-			message.Delivered = true
+			message.Delivered = 0
 		} else {
-			log.Printf("Destinataire %s non trouvé, message sauvegardé\n", destID)
+			log.Printf("Destinataire %s non trouvé, message sauvegardé\n", req.ReceiverID)
 			// Le message est marqué comme non livré, à envoyer lors de la reconnexion
-			message.Delivered = false
+			message.Delivered = 1
 			config.MessageRepository.Save(&message)
 		}
 	}
-
 	// Déconnecter le client lorsqu'il quitte
 	clientsLock.Lock()
-	delete(clients, req.UserID)
+	delete(clients, reqAuth.UserID)
 	clientsLock.Unlock()
 }
 
-func parseMessage(msg string) (string, string) {
-	// Extraire l'ID du destinataire et le contenu du message
-	parts := strings.SplitN(msg, ":", 2)
-	if len(parts) != 2 {
-		return "", ""
-	}
-	return parts[0], parts[1]
-}
-
-// func handleSendMessage(w http.ResponseWriter, r *http.Request) {
-// 	// Lire les données de la requête
-// 	var data struct {
-// 		SenderID   string `json:"sender_id"`
-// 		ReceiverID string `json:"receiver_id"`
-// 		Content    string `json:"content"`
+// func parseMessage(msg string) (string, string) {
+// 	// Extraire l'ID du destinataire et le contenu du message
+// 	if !isValidJSON(msg) {
+// 		parts := strings.SplitN(msg, ":", 2)
+// 		if len(parts) != 2 {
+// 			return "", ""
+// 		}
+// 		return parts[0], parts[1]
 // 	}
-// 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-// 		http.Error(w, "Erreur de lecture de la requête", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	// Sauvegarder le message dans la base de données
-// 	message := dbmodel.Message{
-// 		SenderID:   data.SenderID,
-// 		ReceiverID: data.ReceiverID,
-// 		Content:    data.Content,
-// 	}
-// 	if err := db.Create(&message).Error; err != nil {
-// 		http.Error(w, "Erreur lors de l'enregistrement du message", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Répondre au client
-// 	w.WriteHeader(http.StatusOK)
-// 	fmt.Fprintf(w, "Message envoyé avec succès")
+// 	return "", ""
 // }
+
+func (config *MessageConfig) SendMessagesToClient(userID string) {
+
+	if config.MessageRepository == nil {
+		log.Fatal("Base de données non initialisée")
+		return
+	}
+
+	// Récupérer les messages non livrés pour l'utilisateur
+	messages := config.MessageRepository.GetUndeliveredMessages(userID)
+	if len(messages) == 0 {
+		log.Printf("Aucun message non livré pour l'utilisateur %s\n", userID)
+		return
+	}
+
+	clientsLock.Lock()
+	client, ok := clients[userID]
+	clientsLock.Unlock()
+
+	if !ok {
+		log.Printf("Client %s non trouvé\n", userID)
+		return
+	}
+
+	for _, message := range messages {
+		err := client.Conn.WriteMessage(websocket.TextMessage, []byte(message.Content))
+		if err != nil {
+			log.Println("Erreur lors de l'envoi du message au client:", err)
+			continue
+		}
+		message.Delivered = 0
+		config.MessageRepository.Save(&message)
+	}
+}

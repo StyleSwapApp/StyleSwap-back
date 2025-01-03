@@ -2,7 +2,6 @@ package dbmodel
 
 import (
 	"errors"
-
 	"gorm.io/gorm"
 )
 
@@ -12,13 +11,14 @@ type Messages struct {
 	ReceiverID string `json:"ReceiverID" gorm:"type:varchar(100)"`
 	Content    string `json:"Message" gorm:"type:text"`
 	Timestamp  int64  `gorm:"autoCreateTime"`
-	Delivered  bool   `gorm:"default:false"`
+	Delivered  int    `json:"Delivered"`
 }
 
 type MessageRepository interface {
 	Create(entry *Messages) error
 	Save(message *Messages) error
-	FindDelivered(id string) ([]Messages, error)
+	FindByUser(id string) ([]Messages, error)
+	GetUndeliveredMessages(userID string) []Messages
 }
 
 type messageRepository struct {
@@ -54,17 +54,14 @@ func (r *messageRepository) Save(message *Messages) error {
 
 func (r *messageRepository) FindByUser(id string) ([]Messages, error) {
 	var entries []Messages
-	if err := r.db.Where("sender_id = ?", id).Find(&entries).Error; err != nil {
+	if err := r.db.Where("receiver_id = ? OR sender_id = ?", id, id).Find(&entries).Error; err != nil {
 		return nil, err
 	}
 	return entries, nil
 }
 
-func (r *messageRepository) FindDelivered(userID string) ([]Messages, error) {
-    var messages []Messages
-    err := r.db.Where("receiver_id = ? AND delivered = ?", userID, true).Find(&messages).Error
-    if err != nil {
-        return nil, err
-    }
-    return messages, nil
+func (r *messageRepository) GetUndeliveredMessages(userID string) []Messages {
+	var messages []Messages
+	r.db.Where("receiver_id = ? AND delivered = ?", userID, 1).Order("created_at ASC").Find(&messages)
+	return messages
 }
