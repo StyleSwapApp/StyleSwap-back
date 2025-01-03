@@ -71,6 +71,9 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 
 	fmt.Printf("Client %s connecté\n", reqAuth.UserID)
 
+	// Récupérer les messages non livrés pour l'utilisateur
+	config.GetConversation(reqAuth.UserID,reqAuth.ClientID)
+
 	if config.MessageRepository == nil {
 		log.Fatal("Base de données non initialisée")
 		return
@@ -91,14 +94,14 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 
 		message := dbmodel.Messages{
 			SenderID:   reqAuth.UserID,
-			ReceiverID: req.ReceiverID,
+			ReceiverID: reqAuth.ClientID,
 			Content:    req.Content,
 		}
 		config.MessageRepository.Create(&message)
 		
 		// Vérifier si le destinataire est connecté
 		clientsLock.Lock()
-		destClient, ok := clients[req.ReceiverID]
+		destClient, ok := clients[reqAuth.ClientID]
 		clientsLock.Unlock()
 
 		if ok {
@@ -109,7 +112,7 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 			}
 			message.Delivered = 0
 		} else {
-			log.Printf("Destinataire %s non trouvé, message sauvegardé\n", req.ReceiverID)
+			log.Printf("Destinataire %s non trouvé, message sauvegardé\n", reqAuth.ClientID)
 			// Le message est marqué comme non livré, à envoyer lors de la reconnexion
 			message.Delivered = 1
 			config.MessageRepository.Save(&message)
@@ -121,48 +124,34 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 	clientsLock.Unlock()
 }
 
-// func parseMessage(msg string) (string, string) {
-// 	// Extraire l'ID du destinataire et le contenu du message
-// 	if !isValidJSON(msg) {
-// 		parts := strings.SplitN(msg, ":", 2)
-// 		if len(parts) != 2 {
-// 			return "", ""
-// 		}
-// 		return parts[0], parts[1]
-// 	}
-// 	return "", ""
-// }
-
-func (config *MessageConfig) SendMessagesToClient(userID string) {
+func (config *MessageConfig) GetConversation(user string,client string){
 
 	if config.MessageRepository == nil {
 		log.Fatal("Base de données non initialisée")
 		return
 	}
 
-	// Récupérer les messages non livrés pour l'utilisateur
-	messages := config.MessageRepository.GetUndeliveredMessages(userID)
-	if len(messages) == 0 {
-		log.Printf("Aucun message non livré pour l'utilisateur %s\n", userID)
-		return
-	}
+	messages := config.MessageRepository.GetConversation(user,client)
 
 	clientsLock.Lock()
-	client, ok := clients[userID]
+	client2, ok := clients[user]
 	clientsLock.Unlock()
 
 	if !ok {
-		log.Printf("Client %s non trouvé\n", userID)
+		log.Printf("Client %s non trouvé\n", user)
 		return
 	}
 
 	for _, message := range messages {
-		err := client.Conn.WriteMessage(websocket.TextMessage, []byte(message.Content))
+		if message.SenderID == user {
+			message.Content = "Moi: " + message.Content
+		} else {
+			message.Content = "Client: " + message.Content
+		}
+		err := client2.Conn.WriteMessage(websocket.TextMessage, []byte(message.Content))
 		if err != nil {
 			log.Println("Erreur lors de l'envoi du message au client:", err)
 			continue
 		}
-		message.Delivered = 0
-		config.MessageRepository.Save(&message)
 	}
 }

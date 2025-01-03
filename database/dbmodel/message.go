@@ -19,6 +19,7 @@ type MessageRepository interface {
 	Save(message *Messages) error
 	FindByUser(id string) ([]Messages, error)
 	GetUndeliveredMessages(userID string) []Messages
+	GetConversation(user string, client string) []Messages
 }
 
 type messageRepository struct {
@@ -65,3 +66,10 @@ func (r *messageRepository) GetUndeliveredMessages(userID string) []Messages {
 	r.db.Where("receiver_id = ? AND delivered = ?", userID, 1).Order("created_at ASC").Find(&messages)
 	return messages
 }
+
+func (r *messageRepository) GetConversation(user string, client string) []Messages {
+	var messages []Messages
+	r.db.Where("(receiver_id = ? AND sender_id = ?) OR (receiver_id = ? AND sender_id = ?)", user, client, client, user).Order("created_at ASC").Find(&messages)
+	return messages
+}
+
