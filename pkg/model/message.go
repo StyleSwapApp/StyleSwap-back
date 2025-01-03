@@ -18,12 +18,13 @@ func (a *AuthedRequest) Bind(r *http.Request) error {
 }
 
 type MessageRequest struct {
+	UserID string `json:"userID"`
 	Content    string `json:"content"`
 }
 
-func (a *MessageRequest) Bind(r *http.Request) error {
-	if a.Content == "" {
-		return errors.New("missing required MessageRequest fields")
-	}
-	return nil
-}
+// func (a *MessageRequest) Bind(r *http.Request) error {
+// 	if a.Content == "" {
+// 		return errors.New("missing required MessageRequest fields")
+// 	}
+// 	return nil
+// }
