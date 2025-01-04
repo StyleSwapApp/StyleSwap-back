@@ -2,7 +2,6 @@ package chat
 
 import (
 	"StyleSwap/config"
-	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/model"
 	"log"
 	"net/http"
@@ -58,16 +57,11 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 
 	// Vérifier si l'utilisateur est connecté
 	nouvelleConnexion(userID, conn)
+
 	//Envoyer le message si le champ Content n'est pas vide
 	if reqAuth.Content != "" {
 		delivered := 1
-		message := dbmodel.Messages{
-			SenderID:   userID,
-			ReceiverID: reqAuth.UserID,
-			Content:    reqAuth.Content,
-			Delivered:  delivered,
-		}
-		config.MessageRepository.Create(&message)
+		config.AjouterBDD(userID, reqAuth.UserID, reqAuth.Content, delivered)
 	}
 	// Récupérer les messages non livrés pour l'utilisateur
 	config.GetConversation(userID, reqAuth.UserID)
@@ -97,7 +91,6 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 		// Vérifier si le message est vide
 		errContent := req.Bind(r)
 		if errContent != nil {
-			log.Println("Erreur, vous ne pouvez pas envoyé un message vide")
 			continue
 		}
 
@@ -106,10 +99,11 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 		destClient, ok := clients[reqAuth.UserID]
 		clientsLock.Unlock()
 
+		// Envoyer le message au destinataire
 		var delivered int
 		if ok { // Si le destinataire est connecté
-			reqAuth.Content = userID + ": " + reqAuth.Content
-			err := destClient.Conn.WriteMessage(websocket.TextMessage, []byte(req.Content))
+			messageEnvoye := userID + ": " + req.Content
+			err := destClient.Conn.WriteMessage(websocket.TextMessage, []byte(messageEnvoye))
 			if err != nil {
 				log.Println("Erreur lors de l'envoi du message au destinataire:", err)
 			}
@@ -118,15 +112,8 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 			log.Printf("Destinataire %s non trouvé, message sauvegardé\n", reqAuth.UserID)
 			delivered = 1
 		}
-
 		//ajouter le message à la base de données
-		message := dbmodel.Messages{
-			SenderID:   userID,
-			ReceiverID: reqAuth.UserID,
-			Content:    req.Content,
-			Delivered:  delivered,
-		}
-		config.MessageRepository.Create(&message)
+		config.AjouterBDD(userID, reqAuth.UserID, req.Content, delivered)
 	}
 
 	// Déconnecter le client lorsqu'il quitte

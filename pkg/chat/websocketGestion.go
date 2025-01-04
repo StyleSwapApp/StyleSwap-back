@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/auth"
 	"fmt"
 	"log"
@@ -44,4 +45,14 @@ func nouvelleConnexion(userID string, conn *websocket.Conn) {
 	clientsLock.Unlock()
 
 	fmt.Printf("Client %s connecté\n", userID)
+}
+
+func (config *MessageConfig) AjouterBDD(SenderID string, ReceiverID string, content string, delivered int) {
+	message := dbmodel.Messages{
+		SenderID:   SenderID,
+		ReceiverID: ReceiverID,
+		Content:    content,
+		Delivered:  delivered,
+	}
+	config.MessageRepository.Create(&message)
 }

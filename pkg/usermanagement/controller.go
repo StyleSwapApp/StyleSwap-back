@@ -58,6 +58,12 @@ func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 		BirthDate: dateB,
 	}
 	config.UserRepository.Create(userEntry)
+	token, err := auth.GenerateToken("StyleSwap", req.UserEmail)
+	if err != nil {
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
 func (config *UserConfig) LoginHandler(w http.ResponseWriter, r *http.Request) {
