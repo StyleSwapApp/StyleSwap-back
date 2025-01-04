@@ -3,9 +3,7 @@ package chat
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
-	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -41,19 +39,7 @@ var (
 
 func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Mettre à niveau la connexion HTTP vers WebSocket
-	userID, ok := auth.GetUserIDFromContext(r.Context())
-
-	if !ok {
-		log.Println("ID utilisateur non trouvé")
-		return
-	}
-
-	conn, err := upgrader.Upgrade(w, r, nil)
-	fmt.Println("Connexion WebSocket établie")
-	if err != nil {
-		log.Println("Erreur WebSocket:", err)
-		return
-	}
+	userID, conn := config.init(w, r)
 	defer conn.Close()
 
 	var reqAuth model.MessageRequest
@@ -61,31 +47,28 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 
 	// Valider la requête d'authentification
 	if reqAuth.UserID == "" {
-		log.Println("Champ manquant dans la requête")
+		log.Println("Champ manquant dans la requête, dites moi à qui vous voulez envoyer le message")
 		return
 	}
 
 	if errRead != nil {
-		log.Printf("Erreur lors de la lecture de l'ID de l'utilisateur: %v\n", err)
+		log.Printf("Erreur lors de la lecture de l'ID de l'utilisateur: %v\n", errRead)
 		return
 	}
 
-	clientsLock.Lock()
-	if _, exists := clients[userID]; exists {
-		log.Println("Cet utilisateur est déjà connecté.")
-		clientsLock.Unlock()
-		return
+	// Vérifier si l'utilisateur est connecté
+	nouvelleConnexion(userID, conn)
+	//Envoyer le message si le champ Content n'est pas vide
+	if reqAuth.Content != "" {
+		delivered := 1
+		message := dbmodel.Messages{
+			SenderID:   userID,
+			ReceiverID: reqAuth.UserID,
+			Content:    reqAuth.Content,
+			Delivered:  delivered,
+		}
+		config.MessageRepository.Create(&message)
 	}
-
-	clients[userID] = &Client{
-		ID:          userID,
-		Conn:        conn,
-		activeConvs: make(map[string]bool), // Initialiser les conversations actives
-	}
-	clientsLock.Unlock()
-
-	fmt.Printf("Client %s connecté\n", userID)
-
 	// Récupérer les messages non livrés pour l'utilisateur
 	config.GetConversation(userID, reqAuth.UserID)
 
@@ -111,37 +94,39 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 			config.GetConversation(userID, req.UserID)
 		}
 
-		// Sauvegarder et envoyer le message
-		if req.Content == "" {
+		// Vérifier si le message est vide
+		errContent := req.Bind(r)
+		if errContent != nil {
+			log.Println("Erreur, vous ne pouvez pas envoyé un message vide")
 			continue
 		}
-
-		message := dbmodel.Messages{
-			SenderID:   userID,
-			ReceiverID: reqAuth.UserID,
-			Content:    req.Content,
-		}
-		config.MessageRepository.Create(&message)
 
 		// Vérifier si le destinataire est connecté
 		clientsLock.Lock()
 		destClient, ok := clients[reqAuth.UserID]
 		clientsLock.Unlock()
 
-		if ok {
-			// Si le destinataire est connecté, envoyer le message
+		var delivered int
+		if ok { // Si le destinataire est connecté
 			reqAuth.Content = userID + ": " + reqAuth.Content
 			err := destClient.Conn.WriteMessage(websocket.TextMessage, []byte(req.Content))
 			if err != nil {
 				log.Println("Erreur lors de l'envoi du message au destinataire:", err)
 			}
-			message.Delivered = 0
-		} else {
+			delivered = 0
+		} else { // Si le destinataire n'est pas connecté
 			log.Printf("Destinataire %s non trouvé, message sauvegardé\n", reqAuth.UserID)
-			// Le message est marqué comme non livré, à envoyer lors de la reconnexion
-			message.Delivered = 1
-			config.MessageRepository.Save(&message)
+			delivered = 1
 		}
+
+		//ajouter le message à la base de données
+		message := dbmodel.Messages{
+			SenderID:   userID,
+			ReceiverID: reqAuth.UserID,
+			Content:    req.Content,
+			Delivered:  delivered,
+		}
+		config.MessageRepository.Create(&message)
 	}
 
 	// Déconnecter le client lorsqu'il quitte

@@ -28,6 +28,20 @@ func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userAll, err := config.UserRepository.FindAll()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	//Vérifier si le pseudo existe déjà
+	for _, entry := range userAll {
+		if entry.Pseudo == req.Pseudo{
+			render.JSON(w, r, map[string]string{"error": "Pseudo already exists"})
+			return
+		}
+	}
+
 	dateB, err := time.Parse("2006-01-02", req.BirthDate)
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "Invalid date format"})

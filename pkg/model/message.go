@@ -5,17 +5,6 @@ import (
 	"net/http"
 )
 
-// type AuthedRequest struct {
-// 	ClientID string `json:"clientID"`
-// }
-
-// func (a *AuthedRequest) Bind(r *http.Request) error {
-// 	if a.ClientID == "" {
-// 		return errors.New("missing required UserID field")
-// 	}
-// 	return nil
-// }
-
 type MessageRequest struct {
 	UserID string `json:"Destinataire"`
 	Content    string `json:"content"`
