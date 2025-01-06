@@ -10,6 +10,10 @@ type UserEntry struct {
 	gorm.Model
 	FName     string 	`json:"user_first_name"`
 	LName     string 	`json:"user_last_name"`
+	Civilite  string 	`json:"user_civilite"`
+	Address   string 	`json:"user_address"`
+	City	  string 	`json:"user_city"`
+	Country   string 	`json:"user_country"`
 	UserEmail string 	`json:"user_email"`
 	Password  string 	`json:"user_password"`
 	Pseudo    string 	`json:"pseudo"`
@@ -19,7 +23,7 @@ type UserEntry struct {
 type UserRepository interface {
 	Create(entry *UserEntry) error
 	FindAll() ([]UserEntry, error)
-	FindByID(id int) (*UserEntry, error)
+	FindByID(pseudo string) (*UserEntry, error)
 	Update(entry *UserEntry) error
 	Delete(id int) error
 	FindByEmail(email string) (*UserEntry, error)
@@ -49,7 +53,7 @@ func (r *userRepository) FindAll() ([]UserEntry, error) {
 	return entries, nil
 }
 
-func (r *userRepository) FindByID(id int) (*UserEntry, error) {
+func (r *userRepository) FindByID(id string) (*UserEntry, error) {
 	var entry UserEntry
 	if err := r.db.First(&entry, id).Error; err != nil {
 		return nil, err
