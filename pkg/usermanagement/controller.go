@@ -143,7 +143,7 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	req := &model.UserDeleteRequest{}
+	req := &model.UserSearchRequest{}
 	if err := render.Bind(r, req); err != nil {
 		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
 		return
@@ -151,6 +151,34 @@ func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) 
 
 	config.UserRepository.Delete(req.UserID)
 	render.JSON(w, r, "User deleted")
+}
+
+func (config *UserConfig) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.UserSearchRequest{}
+	if err := render.Bind(r, req); err != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+	
+	user, errUser := config.UserRepository.FindByID(req.UserID)
+	if errUser != nil {
+		render.JSON(w, r, map[string]string{"error": "User not found"})
+		return
+	}
+
+	res := model.UserCompletResponse{
+		UserFName:  user.FName,
+		UserLName:  user.LName,
+		Civilite:   user.Civilite,
+		Address:    user.Address,
+		City:       user.City,
+		Country:    user.Country,
+		UserEmail:  user.UserEmail,
+		Pseudo:     user.Pseudo,
+		BirthDate:  user.BirthDate.Format("2006-01-02"),
+	}
+	render.JSON(w, r, res)
+
 }
 
 func (config *UserConfig) NewPassword(w http.ResponseWriter, r *http.Request, Id int) error {

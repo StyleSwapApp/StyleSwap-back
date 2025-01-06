@@ -15,6 +15,7 @@ func Routes(configuration *config.Config) *chi.Mux{
 	router.Get("/login", userConfig.LoginHandler)
 	router.Put("/updateUser", userConfig.UpdateHandler)
 	router.Delete("/deleteUser", userConfig.DeleteHandler)
+	router.Get("/getUser", userConfig.GetUserHandler)
 
 	return router
 }

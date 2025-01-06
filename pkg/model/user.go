@@ -75,11 +75,11 @@ func (b *LoginRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type UserDeleteRequest struct {
+type UserSearchRequest struct {
 	UserID int `json:"userID"`
 }
 
-func (a *UserDeleteRequest) Bind(r *http.Request) error {
+func (a *UserSearchRequest) Bind(r *http.Request) error {
 	if a.UserID == 0 {
 		return errors.New("missing required UserID fields")
 	}
@@ -95,4 +95,16 @@ type UserResponse struct {
 	UserEmail string   `json:"useremail"`
 	BirthDate string   `json:"birthdate"`
 	Article   []string `json:"articles"`
+}
+
+type UserCompletResponse struct {
+	UserFName  string `json:"userfname"`
+	UserLName  string `json:"userlname"`
+	Civilite   string `json:"civilite"`
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	Country    string `json:"country"`
+	UserEmail  string `json:"useremail"`
+	Pseudo     string `json:"pseudo"`
+	BirthDate  string `json:"birthdate"`
 }
