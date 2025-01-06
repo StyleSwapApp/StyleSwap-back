@@ -1,0 +1,81 @@
+swagger: "2.0"
+info:
+  title: API_StyleSwap
+  description: Documentation pour l'API StyleSwap.
+  version: 1.0.0
+host: localhost:8080
+basePath: /api/v1
+schemes:
+  - http
+paths:
+  /articles/newArticle:
+    post:
+      summary: Créer un nouvel article
+      description: Permet de créer un nouvel article.
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: name
+          in: formData
+          description: Nom de l'article
+          required: true
+          type: string
+        - name: price
+          in: formData
+          description: Prix de l'article
+          required: true
+          type: string
+        - name: description
+          in: formData
+          description: Description de l'article
+          required: true
+          type: string
+        - name: image
+          in: formData
+          description: Image de l'article
+          required: true
+          type: file
+        - name: userPseudo
+          in: formData
+          description: Pseudo de l'utilisateur
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Article créé avec succès
+  /user/newUser:
+    post:
+      summary: Créer un utilisateur
+      description: Permet de créer un nouvel utilisateur.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: Informations de l'utilisateur
+          required: true
+          schema:
+            type: object
+            properties:
+              userfname:
+                type: string
+                example: Simon
+              userlname:
+                type: string
+                example: Louis
+              useremail:
+                type: string
+                example: Simon.Louis@gmail.com
+              userpw:
+                type: string
+                example: SIMONGOAT
+              pseudo:
+                type: string
+                example: SimonL44
+              BirthDate:
+                type: string
+                format: date
+                example: 2002-09-13
+      responses:
+        '200':
+          description: Utilisateur créé avec succès

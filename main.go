@@ -4,6 +4,7 @@ import (
 	"StyleSwap/config"
 	"StyleSwap/pkg/article"
 	"StyleSwap/pkg/auth"
+	"StyleSwap/pkg/chat"
 	"StyleSwap/pkg/usermanagement"
 	"log"
 	"net/http"
@@ -22,6 +23,7 @@ func Routes(configuration *config.Config) *chi.Mux {
 		r.Use(auth.AuthMiddleware("StyleSwap"))
 		r.Mount("/api/v1/articles", article.Routes(configuration))
 		r.Mount("/api/v1/user", usermanagement.Routes(configuration))
+		r.Mount("/api/v1/chat", chat.Routes(configuration))
 	})
 
 	return router
