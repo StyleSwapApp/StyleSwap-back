@@ -25,6 +25,7 @@ type ArticleRepository interface {
 	FindByPseudo(pseudo string) ([]ArticleEntry, error)
 	Delete(id int) error
 	Update(entry *ArticleEntry) error
+	FindImageByID(Id int) (string, error)
 }
 
 type articleRepository struct {
@@ -68,6 +69,14 @@ func (r *articleRepository) FindByPseudo(pseudo string) ([]ArticleEntry, error) 
 		return nil, err
 	}
 	return entries, nil
+}
+
+func (r *articleRepository) FindImageByID(Id int) (string, error) {
+	var entry ArticleEntry
+	if err := r.db.First(&entry, Id).Error; err != nil {
+		return "", err
+	}
+	return entry.ImageURL, nil
 }
 
 func (r *articleRepository) Delete(id int) error {

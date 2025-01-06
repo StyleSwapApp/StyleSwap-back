@@ -42,6 +42,8 @@ func AuthMiddleware(secret string) func(http.Handler) http.Handler {
 
 // GetUserIDFromContext récupère user_id depuis le contexte
 func GetUserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value("user_id").(string)
-	return userID, ok
+	// Récupérer la valeur du contexte pour "user_id"
+	userID := ctx.Value("user_id")
+	userIDStr, ok := userID.(string)
+	return userIDStr, ok
 }

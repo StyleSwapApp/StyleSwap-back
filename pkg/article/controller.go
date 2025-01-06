@@ -28,12 +28,12 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	// Récupérer le pseudo de l'utilisateur
-	username := r.FormValue("userPseudo")
-	if username == "" {
+	userpseudo := r.FormValue("userPseudo")
+	if userpseudo == "" {
 		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
 		return
 	}
-	user, err := config.UserRepository.FindByPseudo(username)
+	user, err := config.UserRepository.FindByPseudo(userpseudo)
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "User not found"})
 		return
@@ -42,6 +42,8 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	// Extraire les données de l'article du formulaire
 	name := r.FormValue("name")
 	priceStr := r.FormValue("price")
+	size := r.FormValue("size")
+	brand := r.FormValue("brand")
 	price, err := strconv.Atoi(priceStr)
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "Invalid price format"})
@@ -76,9 +78,11 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
-		PseudoUser:  user,
+		PseudoUser:  user.Pseudo,
 		Name:        name,
 		Price:       price,
+		Size:        size,
+		Brand:       brand,
 		Description: description,
 		ImageURL:    imageURL,
 	}
@@ -120,8 +124,8 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 			UserPseudo:         article.PseudoUser,
 			ArticleName:        article.Name,
 			ArticlePrice:       article.Price,
-			ArticleSize: 	    article.Size,
-			ArticleBrand: 	 	article.Brand,
+			ArticleSize:        article.Size,
+			ArticleBrand:       article.Brand,
 			ArticleDescription: article.Description,
 			ArticleImage:       article.ImageURL,
 		}
@@ -138,7 +142,7 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
 		return
 	}
-	errBucket := config.DeleteImageFromS3(req.ImageURL)
+	errBucket := config.DeleteImageFromS3(req.ArticleId)
 
 	if errBucket != nil {
 		render.JSON(w, r, map[string]string{"error": "Error while deleting image from S3"})
@@ -164,8 +168,8 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 		PseudoUser:  req.UserPseudo,
 		Name:        req.ArticleName,
 		Price:       req.ArticlePrice,
-		Size:		 req.ArticleSize,
-		Brand:		 req.ArticleBrand,
+		Size:        req.ArticleSize,
+		Brand:       req.ArticleBrand,
 		Description: req.ArticleDescription,
 		ImageURL:    req.ArticleImage,
 	}
@@ -186,14 +190,14 @@ func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request
 		return model.ArticleResponse{}, err
 	}
 	res := model.ArticleResponse{
-		ArticleId: int(article.ID),
-		UserPseudo: article.PseudoUser,
-		ArticleName: article.Name,
-		ArticlePrice: article.Price,
-		ArticleSize: article.Size,
-		ArticleBrand: article.Brand,
+		ArticleId:          int(article.ID),
+		UserPseudo:         article.PseudoUser,
+		ArticleName:        article.Name,
+		ArticlePrice:       article.Price,
+		ArticleSize:        article.Size,
+		ArticleBrand:       article.Brand,
 		ArticleDescription: article.Description,
-		ArticleImage: article.ImageURL,
+		ArticleImage:       article.ImageURL,
 	}
 	render.JSON(w, r, res)
 	return res, nil

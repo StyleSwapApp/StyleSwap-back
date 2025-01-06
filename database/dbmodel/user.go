@@ -15,9 +15,9 @@ type UserEntry struct {
 	Address   string    `json:"user_address"`
 	City      string    `json:"user_city"`
 	Country   string    `json:"user_country"`
-	UserEmail string    `json:"user_email"`
+	UserEmail string    `json:"user_email" gorm:"unique"`	
 	Password  string    `json:"user_password"`
-	Pseudo    string    `json:"pseudo"`
+	Pseudo    string    `json:"pseudo" gorm:"unique"`
 	BirthDate time.Time `json:"user_birthdate"`
 }
 
@@ -28,7 +28,7 @@ type UserRepository interface {
 	Update(id int, entry *UserEntry) error
 	Delete(id int) error
 	FindByEmail(email string) (*UserEntry, error)
-	FindByPseudo(pseudo string) (string, error)
+	FindByPseudo(pseudo string) (UserEntry, error)
 }
 
 type userRepository struct {
@@ -137,12 +137,12 @@ func (r *userRepository) Delete(id int) error {
 	return nil
 }
 
-func (r *userRepository) FindByPseudo(pseudo string) (string, error) {
+func (r *userRepository) FindByPseudo(pseudo string) (UserEntry, error) {
 	var entry UserEntry
 	if err := r.db.Where("pseudo = ?", pseudo).First(&entry).Error; err != nil {
-		return "", err
+		return entry, err
 	}
-	return pseudo, nil
+	return entry, nil
 }
 
 func (r *userRepository) FindByEmail(email string) (*UserEntry, error) {

@@ -62,7 +62,8 @@ func extractS3KeyFromURL(s3URL string) (string, error) {
 	return key, nil
 }
 
-func (config *ArticleConfig) DeleteImageFromS3(UrlImage string) error {
+func (config *ArticleConfig) DeleteImageFromS3(IdArticle int) error {
+
 	// Initialiser une session AWS
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-west-3"),
@@ -72,18 +73,27 @@ func (config *ArticleConfig) DeleteImageFromS3(UrlImage string) error {
 		return err
 	}
 
+	// Récupérer url à partir de l'id de l'article
+	urlImage, err:= config.ArticleRepository.FindImageByID(IdArticle)
+	if err != nil {
+		log.Println("Failed to get image URL from database,", err)
+		return err
+	}
+
 	// Créer un client S3
 	s3Client := s3.New(sess)
-	imageKey, err := extractS3KeyFromURL(UrlImage)
+	imageKey, err := extractS3KeyFromURL(urlImage)
 	if err != nil {
 		log.Println("Failed to extract S3 key from URL,", err)
 	}
 
+	// Créer une requête pour supprimer l'objet
 	deleteObjectInput := &s3.DeleteObjectInput{
 		Bucket: aws.String("styleswapbucket"),
 		Key:    aws.String(imageKey),
 	}
 
+	// Supprimer l'image de S3
 	_, err = s3Client.DeleteObject(deleteObjectInput)
 	if err != nil {
 		log.Println("Failed to delete image from S3,", err)
