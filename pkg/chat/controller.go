@@ -50,6 +50,26 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Récupérer tous les Pseudo de la base de données
+	AllUser,err := config.UserRepository.FindAll()
+	if err != nil {
+		log.Printf("Erreur lors de la récupération des utilisateurs: %v\n", err)
+		return
+	}
+	// Vérifier si l'utilisateur existe
+	var userExist bool
+	for _, user := range AllUser {
+		if user.Pseudo == reqAuth.UserID {
+			userExist = true
+			break
+		}
+	}
+	
+	if !userExist {
+		log.Printf("Utilisateur %s non trouvé\n", reqAuth.UserID)
+		return
+	}
+
 	if errRead != nil {
 		log.Printf("Erreur lors de la lecture de l'ID de l'utilisateur: %v\n", errRead)
 		return
