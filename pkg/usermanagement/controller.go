@@ -138,7 +138,7 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 		BirthDate: dateB,
 	}
 
-	config.UserRepository.Update(userEntry)
+	config.UserRepository.Update(req.UserID, userEntry)
 	render.JSON(w, r, "User updated")
 }
 
@@ -151,4 +151,8 @@ func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) 
 
 	config.UserRepository.Delete(req.UserID)
 	render.JSON(w, r, "User deleted")
+}
+
+func (config *UserConfig) NewPassword(w http.ResponseWriter, r *http.Request, Id int) error {
+	return nil
 }

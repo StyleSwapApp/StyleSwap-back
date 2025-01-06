@@ -27,17 +27,19 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		render.JSON(w, r, map[string]string{"error": "Unable to parse multipart form"})
 		return
 	}
-
+	// Récupérer le pseudo de l'utilisateur
 	username := r.FormValue("userPseudo")
+	if username == "" {
+		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
+		return
+	}
 	user, err := config.UserRepository.FindByPseudo(username)
 	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "User not found"})
 		return
 	}
-	if user == "" {
-		render.JSON(w, r, map[string]string{"error": "User not found"})
-		return
-	}
+
+	// Extraire les données de l'article du formulaire
 	name := r.FormValue("name")
 	priceStr := r.FormValue("price")
 	price, err := strconv.Atoi(priceStr)
@@ -188,6 +190,8 @@ func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request
 		UserPseudo: article.PseudoUser,
 		ArticleName: article.Name,
 		ArticlePrice: article.Price,
+		ArticleSize: article.Size,
+		ArticleBrand: article.Brand,
 		ArticleDescription: article.Description,
 		ArticleImage: article.ImageURL,
 	}

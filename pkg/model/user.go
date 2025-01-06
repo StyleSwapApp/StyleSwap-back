@@ -7,6 +7,7 @@ import (
 )
 
 type UserRequest struct {
+	UserID	  int    `json:"userID"`
 	UserFName string `json:"userfname"`
 	UserLName string `json:"userlname"`
 	Civilite  string `json:"civilite"`
@@ -83,6 +84,10 @@ func (a *UserDeleteRequest) Bind(r *http.Request) error {
 		return errors.New("missing required UserID fields")
 	}
 	return nil
+}
+
+type UserPasswordRequest struct {
+	UserID    int    `json:"userID"`
 }
 type UserResponse struct {
 	UserFName string   `json:"userfname"`
