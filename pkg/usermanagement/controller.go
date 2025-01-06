@@ -52,11 +52,16 @@ func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 	userEntry := &dbmodel.UserEntry{
 		FName:     req.UserFName,
 		LName:     req.UserLName,
+		Civilite:  req.Civilite,
+		Address:   req.Address,
+		City:      req.City,
+		Country:   req.Country,
 		UserEmail: req.UserEmail,
 		Password:  HASH,
 		Pseudo:    req.Pseudo,
 		BirthDate: dateB,
 	}
+
 	config.UserRepository.Create(userEntry)
 	token, err := auth.GenerateToken("StyleSwap", req.UserEmail)
 	if err != nil {
@@ -108,4 +113,74 @@ func hashedPassword(password string) string {
 		return ""
 	}
 	return string(bcryptPassword)
+}
+
+func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.UserRequest{}
+	if err := render.Bind(r, req); err != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+	
+	dateB, err := time.Parse("2006-01-02", req.BirthDate)
+	if err != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid date format"})
+		return
+	}
+
+	userEntry := &dbmodel.UserEntry{
+		FName:    req.UserFName,
+		LName:    req.UserLName,
+		Civilite: req.Civilite,
+		Address:  req.Address,
+		City:     req.City,
+		Country:  req.Country,
+		BirthDate: dateB,
+	}
+
+	config.UserRepository.Update(req.UserID, userEntry)
+	render.JSON(w, r, "User updated")
+}
+
+func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.UserSearchRequest{}
+	if err := render.Bind(r, req); err != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+
+	config.UserRepository.Delete(req.UserID)
+	render.JSON(w, r, "User deleted")
+}
+
+func (config *UserConfig) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.UserSearchRequest{}
+	if err := render.Bind(r, req); err != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+	
+	user, errUser := config.UserRepository.FindByID(req.UserID)
+	if errUser != nil {
+		render.JSON(w, r, map[string]string{"error": "User not found"})
+		return
+	}
+
+	res := model.UserCompletResponse{
+		UserFName:  user.FName,
+		UserLName:  user.LName,
+		Civilite:   user.Civilite,
+		Address:    user.Address,
+		City:       user.City,
+		Country:    user.Country,
+		UserEmail:  user.UserEmail,
+		Pseudo:     user.Pseudo,
+		BirthDate:  user.BirthDate.Format("2006-01-02"),
+	}
+	render.JSON(w, r, res)
+
+}
+
+func (config *UserConfig) NewPassword(w http.ResponseWriter, r *http.Request, Id int) error {
+	return nil
 }

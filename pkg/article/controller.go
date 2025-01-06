@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 )
@@ -26,17 +27,19 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		render.JSON(w, r, map[string]string{"error": "Unable to parse multipart form"})
 		return
 	}
-
+	// Récupérer le pseudo de l'utilisateur
 	username := r.FormValue("userPseudo")
+	if username == "" {
+		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
+		return
+	}
 	user, err := config.UserRepository.FindByPseudo(username)
-	if err != nil {	
+	if err != nil {
 		render.JSON(w, r, map[string]string{"error": "User not found"})
 		return
 	}
-	if user == "" {
-		render.JSON(w, r, map[string]string{"error": "User not found"})
-		return
-	}
+
+	// Extraire les données de l'article du formulaire
 	name := r.FormValue("name")
 	priceStr := r.FormValue("price")
 	price, err := strconv.Atoi(priceStr)
@@ -73,11 +76,11 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
-		PseudoUser:		user,
-		Name:			name,
-		Price:      	price,
-		Description:	description,
-		ImageURL:    	imageURL,
+		PseudoUser:  user,
+		Name:        name,
+		Price:       price,
+		Description: description,
+		ImageURL:    imageURL,
 	}
 
 	// Ajouter l'article à la base de données
@@ -117,6 +120,8 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 			UserPseudo:         article.PseudoUser,
 			ArticleName:        article.Name,
 			ArticlePrice:       article.Price,
+			ArticleSize: 	    article.Size,
+			ArticleBrand: 	 	article.Brand,
 			ArticleDescription: article.Description,
 			ArticleImage:       article.ImageURL,
 		}
@@ -126,7 +131,6 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 	// Renvoyer tous les articles dans une seule réponse
 	render.JSON(w, r, articleResponses)
 }
-
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
 	req := &model.ArticleDeleteRequest{}
@@ -147,4 +151,50 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 		render.JSON(w, r, map[string]string{"error": "Error while deleting article from the database"})
 		return
 	}
+}
+
+func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
+	req := &model.ArticleUpdateRequest{}
+	if errRequest := render.Bind(r, req); errRequest != nil {
+		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+
+	article := &dbmodel.ArticleEntry{
+		PseudoUser:  req.UserPseudo,
+		Name:        req.ArticleName,
+		Price:       req.ArticlePrice,
+		Size:		 req.ArticleSize,
+		Brand:		 req.ArticleBrand,
+		Description: req.ArticleDescription,
+		ImageURL:    req.ArticleImage,
+	}
+
+	errUpdate := config.ArticleRepository.Update(article)
+	if errUpdate != nil {
+		render.JSON(w, r, map[string]string{"error": "Error while updating article"})
+		return
+	}
+	render.JSON(w, r, map[string]string{"message": "Article updated successfully"})
+}
+
+func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request, Id int) (model.ArticleResponse, error) {
+	req := &model.ArticleDeleteRequest{}
+	article, err := config.ArticleRepository.FindByID(req.ArticleId)
+	if err != nil {
+		render.JSON(w, r, map[string]string{"error": "Article not found"})
+		return model.ArticleResponse{}, err
+	}
+	res := model.ArticleResponse{
+		ArticleId: int(article.ID),
+		UserPseudo: article.PseudoUser,
+		ArticleName: article.Name,
+		ArticlePrice: article.Price,
+		ArticleSize: article.Size,
+		ArticleBrand: article.Brand,
+		ArticleDescription: article.Description,
+		ArticleImage: article.ImageURL,
+	}
+	render.JSON(w, r, res)
+	return res, nil
 }

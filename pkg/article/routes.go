@@ -13,6 +13,8 @@ func Routes(configuration *config.Config) *chi.Mux{
 	router.Post("/newArticle", articleConfig.ArticleHandler)
 	router.Get("/getArticle", articleConfig.GetArticlesHandler)
 	router.Delete("/deleteArticle", articleConfig.DeleteArticleHandler)
+	router.Put("/updateArticle", articleConfig.UpdateArticleHandler)
+	
 
 	return router
 }
