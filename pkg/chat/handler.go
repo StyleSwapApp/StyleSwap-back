@@ -38,7 +38,7 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 	defer conn.Close()
 
 	// Authentifier l'utilisateur
-	userID, err := AuthenticateUser(conn)
+	userID, err := AuthenticateUser(conn, r)
 	if err != nil {
 		log.Println(err)
 		return
@@ -49,8 +49,8 @@ func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Requ
 	defer clientManager.RemoveClient(userID)
 
 	// Charger l'historique des messages
-	config.GetConversation(userID, "")
+	config.GetConversation(r, userID)
 
 	// Écouter les messages
-	config.HandleMessage(userID, conn)
+	config.HandleMessage(userID, conn, r)
 }

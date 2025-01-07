@@ -1,14 +1,17 @@
 package chat
 
 import (
+	"StyleSwap/database/dbmodel"
+	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
 	"log"
+	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
 // Gère les messages entrants
-func (config *MessageConfig) HandleMessage(userID string, conn *websocket.Conn) {
+func (config *MessageConfig) HandleMessage(userID string, conn *websocket.Conn, r *http.Request) {
 	for {
 		var req model.MessageRequest
 		err := conn.ReadJSON(&req)
@@ -17,30 +20,20 @@ func (config *MessageConfig) HandleMessage(userID string, conn *websocket.Conn) 
 			break
 		}
 
-		// Changement de conversation
-		if req.UserID != "" {
-			config.SwitchConversation(userID, req.UserID)
-		}
-
 		// Envoyer le message
-		config.DeliverMessage(userID, req.UserID, req.Content)
+		config.DeliverMessage(userID, req.Content, r)
 	}
 }
 
-// Changer de conversation
-func (config *MessageConfig) SwitchConversation(userID, newUserID string) {
-	client, ok := clientManager.GetClient(userID)
-	if ok {
-		client.CurrentClient = newUserID
-		config.GetConversation(userID, newUserID)
-	}
-}
+func (config *MessageConfig) DeliverMessage(receiverID, content string, r *http.Request) {
+	senderID, okUser := auth.GetUserIDFromContext(r.Context())
+	if !okUser {
 
-// Envoyer un message
-func (config *MessageConfig) DeliverMessage(senderID, receiverID, content string) {
+		return
+	}
 	destClient, ok := clientManager.GetClient(receiverID)
-	var delivered int
 
+	var delivered int
 	if ok {
 		message := senderID + ": " + content
 		err := destClient.SendMessage(message)
@@ -54,4 +47,14 @@ func (config *MessageConfig) DeliverMessage(senderID, receiverID, content string
 	}
 
 	config.AjouterBDD(senderID, receiverID, content, delivered)
+}
+
+func (config *MessageConfig) AjouterBDD(SenderID string, ReceiverID string, content string, delivered int) {
+	message := dbmodel.Messages{
+		SenderID:   SenderID,
+		ReceiverID: ReceiverID,
+		Content:    content,
+		Delivered:  delivered,
+	}
+	config.MessageRepository.Create(&message)
 }

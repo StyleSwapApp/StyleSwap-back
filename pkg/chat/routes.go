@@ -12,10 +12,10 @@ func Routes(configuration *config.Config) *chi.Mux {
 	router := chi.NewRouter()
 
 	// Route WebSocket pour le chat en temps réel
-	router.Get("/ws", messageConfig.HandleWebSocket)
+	router.Get("/ws/{idclient}", messageConfig.HandleWebSocket)
 
 	// Route pour envoyer un message via HTTP (si nécessaire)
-	router.Post("/message", messageConfig.SendMessageHandler)
+	// router.Post("/message", messageConfig.SendMessageHandler)
 
 	return router
 }

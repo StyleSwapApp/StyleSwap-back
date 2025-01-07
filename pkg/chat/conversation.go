@@ -2,12 +2,15 @@ package chat
 
 import (
 	"log"
+	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 )
 
 // GetConversation récupère et envoie les messages historiques
-func (config *MessageConfig) GetConversation(user string, client string) {
+func (config *MessageConfig) GetConversation(r *http.Request, user string) {
+	client := chi.URLParam(r, "idclient")
 	if config.MessageRepository == nil {
 		log.Fatal("Base de données non initialisée")
 		return

@@ -6,7 +6,6 @@ import (
 )
 
 type MessageRequest struct {
-	UserID string `json:"Destinataire"`
 	Content    string `json:"content"`
 }
 
