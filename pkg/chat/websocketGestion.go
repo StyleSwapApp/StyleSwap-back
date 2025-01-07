@@ -29,24 +29,6 @@ func (config *MessageConfig) init(w http.ResponseWriter, r *http.Request) (strin
 	return userID, conn
 }
 
-func nouvelleConnexion(userID string, conn *websocket.Conn) {
-	clientsLock.Lock()
-	if _, exists := clients[userID]; exists {
-		log.Println("Cet utilisateur est déjà connecté.")
-		clientsLock.Unlock()
-		return
-	}
-
-	clients[userID] = &Client{
-		ID:          userID,
-		Conn:        conn,
-		activeConvs: make(map[string]bool), // Initialiser les conversations actives
-	}
-	clientsLock.Unlock()
-
-	fmt.Printf("Client %s connecté\n", userID)
-}
-
 func (config *MessageConfig) AjouterBDD(SenderID string, ReceiverID string, content string, delivered int) {
 	message := dbmodel.Messages{
 		SenderID:   SenderID,
