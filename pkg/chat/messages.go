@@ -4,17 +4,20 @@ import (
 	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
+	"StyleSwap/utils"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
-// Gère les messages entrants
+// HandleMessage gère les messages WebSocket
+
 func (config *MessageConfig) HandleMessage(userID string, conn *websocket.Conn, r *http.Request) {
 	for {
 		var req model.MessageRequest
 		err := conn.ReadJSON(&req)
+
 		if err != nil {
 			log.Println("Erreur lors de la lecture du message:", err)
 			break
@@ -25,10 +28,12 @@ func (config *MessageConfig) HandleMessage(userID string, conn *websocket.Conn, 
 	}
 }
 
+
+// DeliverMessage envoie un message à un client WebSocket ou le sauvegarde en base de données si le client n'est pas connecté
+
 func (config *MessageConfig) DeliverMessage(receiverID, content string, r *http.Request) {
 	senderID, okUser := auth.GetUserIDFromContext(r.Context())
 	if !okUser {
-
 		return
 	}
 	destClient, ok := clientManager.GetClient(receiverID)
@@ -37,17 +42,17 @@ func (config *MessageConfig) DeliverMessage(receiverID, content string, r *http.
 	if ok {
 		message := senderID + ": " + content
 		err := destClient.SendMessage(message)
-		if err != nil {
-			log.Println("Erreur lors de l'envoi du message:", err)
-		}
+		utils.HandleError(err, "Erreur lors de l'envoi du message au client")
 		delivered = 0
 	} else {
-		log.Printf("Destinataire %s non trouvé, message sauvegardé\n", receiverID)
 		delivered = 1
 	}
 
 	config.AjouterBDD(senderID, receiverID, content, delivered)
 }
+
+
+// AjouterBDD ajoute un message à la base de données
 
 func (config *MessageConfig) AjouterBDD(SenderID string, ReceiverID string, content string, delivered int) {
 	message := dbmodel.Messages{

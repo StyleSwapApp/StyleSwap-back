@@ -4,6 +4,7 @@ import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/model"
+	"StyleSwap/utils"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -23,10 +24,7 @@ func New(configuration *config.Config) *ArticleConfig {
 func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse la requête multipart pour obtenir les données de formulaire
 	err := r.ParseMultipartForm(10 << 20) // Limite de taille de 10 Mo pour l'image
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Unable to parse multipart form"})
-		return
-	}
+	utils.HandleError(err, "Error parsing form data")
 	// Récupérer le pseudo de l'utilisateur
 	userpseudo := r.FormValue("userPseudo")
 	if userpseudo == "" {
@@ -34,21 +32,15 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	user, err := config.UserRepository.FindByPseudo(userpseudo)
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "User not found"})
-		return
-	}
+	utils.HandleError(err, "Error while fetching user from the database")
 
 	// Extraire les données de l'article du formulaire
 	name := r.FormValue("name")
 	priceStr := r.FormValue("price")
+	price, err := strconv.Atoi(priceStr)
+	utils.HandleError(err, "Error while converting price to integer")
 	size := r.FormValue("size")
 	brand := r.FormValue("brand")
-	price, err := strconv.Atoi(priceStr)
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid price format"})
-		return
-	}
 	description := r.FormValue("description")
 
 	// Vérification que tous les champs sont fournis
@@ -59,10 +51,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Récupérer le fichier de la requête (champ "image")
 	file, _, err := r.FormFile("image")
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Unable to get file from form"})
-		return
-	}
+	utils.HandleError(err, "Error retrieving image from form data")
 	defer file.Close()
 
 	// Générer un nom unique pour le fichier sur S3
@@ -71,10 +60,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Télécharger l'image sur S3
 	imageURL, err := uploadToS3(file, filename)
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Failed to upload image to S3"})
-		return
-	}
+	utils.HandleError(err, "Error uploading image to S3")
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
@@ -110,10 +96,7 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 	}
 
 	// Gestion des erreurs si la recherche échoue
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Error while fetching articles from the database"})
-		return
-	}
+	utils.HandleError(err, "Error while fetching articles from the database")
 
 	// Créer un tableau pour contenir toutes les réponses d'articles
 	var articleResponses []model.ArticleResponse
@@ -143,18 +126,11 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 		return
 	}
 	errBucket := config.DeleteImageFromS3(req.ArticleId)
-
-	if errBucket != nil {
-		render.JSON(w, r, map[string]string{"error": "Error while deleting image from S3"})
-		return
-	}
+	utils.HandleError(errBucket, "Error while deleting image from S3")
 
 	errBDD := config.ArticleRepository.Delete(req.ArticleId)
+	utils.HandleError(errBDD, "Error while deleting article from database")
 
-	if errBDD != nil {
-		render.JSON(w, r, map[string]string{"error": "Error while deleting article from the database"})
-		return
-	}
 }
 
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -175,20 +151,15 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	}
 
 	errUpdate := config.ArticleRepository.Update(article)
-	if errUpdate != nil {
-		render.JSON(w, r, map[string]string{"error": "Error while updating article"})
-		return
-	}
+	utils.HandleError(errUpdate, "Error while updating article in database")
+
 	render.JSON(w, r, map[string]string{"message": "Article updated successfully"})
 }
 
 func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request, Id int) (model.ArticleResponse, error) {
 	req := &model.ArticleDeleteRequest{}
 	article, err := config.ArticleRepository.FindByID(req.ArticleId)
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Article not found"})
-		return model.ArticleResponse{}, err
-	}
+	utils.HandleError(err, "Error while fetching article from database")
 	res := model.ArticleResponse{
 		ArticleId:          int(article.ID),
 		UserPseudo:         article.PseudoUser,

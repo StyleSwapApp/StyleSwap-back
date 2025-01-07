@@ -1,8 +1,10 @@
 package chat
 
 import (
+	"StyleSwap/utils"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
@@ -10,14 +12,21 @@ import (
 
 // GetConversation récupère et envoie les messages historiques
 func (config *MessageConfig) GetConversation(r *http.Request, user string) {
-	client := chi.URLParam(r, "idclient")
 	if config.MessageRepository == nil {
 		log.Fatal("Base de données non initialisée")
 		return
 	}
 
+	// Récupérer l'ID du client
+	IDclient := chi.URLParam(r, "idclient")
+	clientID, err := strconv.Atoi(IDclient)
+	utils.HandleError(err, "Erreur lors de la conversion de l'ID du client en entier")
+
+	client, err := config.UserRepository.FindByID(clientID)
+	utils.HandleError(err, "Erreur lors de la recherche du client par ID")
+
 	// Récupérer les messages depuis la base de données
-	messages := config.MessageRepository.GetConversation(user, client)
+	messages := config.MessageRepository.GetConversation(user, client.Pseudo)
 
 	// Récupérer le client depuis le gestionnaire
 	clientInstance, ok := clientManager.GetClient(user)
@@ -32,12 +41,10 @@ func (config *MessageConfig) GetConversation(r *http.Request, user string) {
 		if message.SenderID == user {
 			formattedContent = user + ": " + message.Content
 		} else {
-			formattedContent = client + ": " + message.Content
+			formattedContent = client.Pseudo + ": " + message.Content
 		}
 
 		err := clientInstance.Conn.WriteMessage(websocket.TextMessage, []byte(formattedContent))
-		if err != nil {
-			log.Println("Erreur lors de l'envoi du message au client:", err)
-		}
+		utils.HandleError(err, "Erreur lors de l'envoi du message au client")
 	}
 }

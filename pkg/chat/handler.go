@@ -1,11 +1,12 @@
 package chat
 
 import (
-	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"StyleSwap/config"
+	"StyleSwap/utils"
+
+	"github.com/gorilla/websocket"
 )
 
 var (
@@ -31,18 +32,12 @@ func New(configuration *config.Config) *MessageConfig {
 func (config *MessageConfig) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Mettre à niveau la connexion HTTP -> WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("Échec de l'upgrade WebSocket:", err)
-		return
-	}
+	utils.HandleError(err, "Erreur lors de la mise à niveau de la connexion HTTP -> WebSocket")
 	defer conn.Close()
 
 	// Authentifier l'utilisateur
 	userID, err := AuthenticateUser(conn, r)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	utils.HandleError(err, "Erreur lors de l'authentification de l'utilisateur")
 
 	// Ajouter le client
 	clientManager.AddClient(userID, conn)

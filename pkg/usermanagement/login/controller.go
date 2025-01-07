@@ -5,6 +5,7 @@ import (
 	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
+	"StyleSwap/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -42,10 +43,7 @@ func (config *UserConfig) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		if entry.Pseudo == req.Pseudo || entry.UserEmail == req.UserEmail {
 			if bcrypt.CompareHashAndPassword([]byte(entry.Password), []byte(req.UserPW)) == nil {
 				token, errGenerateToken := auth.GenerateToken("StyleSwap", entry.Pseudo)
-				if errGenerateToken != nil {
-					http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-					return
-				}
+				utils.HandleError(errGenerateToken, "Error while generating token")
 				w.Header().Set("Content-Type", "application/json")
 				json.NewEncoder(w).Encode(map[string]string{"token": token})
 				return
@@ -65,10 +63,7 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	dateB, err := time.Parse("2006-01-02", req.BirthDate)
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid date format"})
-		return
-	}
+	utils.HandleError(err, "Error while parsing date")
 
 	userEntry := &dbmodel.UserEntry{
 		FName:     req.UserFName,

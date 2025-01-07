@@ -5,6 +5,7 @@ import (
 	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
+	"StyleSwap/utils"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -43,10 +44,7 @@ func (config *UserConfig) UserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dateB, err := time.Parse("2006-01-02", req.BirthDate)
-	if err != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid date format"})
-		return
-	}
+	utils.HandleError(err, "Error while parsing date")
 
 	HASH := hashedPassword(req.UserPW)
 	userEntry := &dbmodel.UserEntry{

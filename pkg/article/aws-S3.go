@@ -1,6 +1,7 @@
 package article
 
 import (
+	"StyleSwap/utils"
 	"bytes"
 	"fmt"
 	"log"
@@ -68,24 +69,16 @@ func (config *ArticleConfig) DeleteImageFromS3(IdArticle int) error {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-west-3"),
 	})
-	if err != nil {
-		log.Println("Failed to create session,", err)
-		return err
-	}
+	utils.HandleError(err, "Failed to create AWS session")
 
 	// Récupérer url à partir de l'id de l'article
 	urlImage, err:= config.ArticleRepository.FindImageByID(IdArticle)
-	if err != nil {
-		log.Println("Failed to get image URL from database,", err)
-		return err
-	}
+	utils.HandleError(err, "Failed to get image URL from article ID")
 
 	// Créer un client S3
 	s3Client := s3.New(sess)
 	imageKey, err := extractS3KeyFromURL(urlImage)
-	if err != nil {
-		log.Println("Failed to extract S3 key from URL,", err)
-	}
+	utils.HandleError(err, "Failed to extract S3 key from URL")
 
 	// Créer une requête pour supprimer l'objet
 	deleteObjectInput := &s3.DeleteObjectInput{
@@ -95,10 +88,7 @@ func (config *ArticleConfig) DeleteImageFromS3(IdArticle int) error {
 
 	// Supprimer l'image de S3
 	_, err = s3Client.DeleteObject(deleteObjectInput)
-	if err != nil {
-		log.Println("Failed to delete image from S3,", err)
-		return err
-	}
+	utils.HandleError(err, "Failed to delete image from S3")
 	log.Println("Image deleted successfully from S3")
 	return nil
 }
