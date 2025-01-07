@@ -25,6 +25,12 @@ func (config *MessageConfig) GetConversation(r *http.Request, user string) {
 	client, err := config.UserRepository.FindByID(clientID)
 	utils.HandleError(err, "Erreur lors de la recherche du client par ID")
 
+	//Être sûr que le client n'est pas le même que l'utilisateur
+	if client.Pseudo == user {
+		log.Printf("Impossible de démarrer une conversation avec soi-même\n")
+		return
+	}
+
 	// Récupérer les messages depuis la base de données
 	messages := config.MessageRepository.GetConversation(user, client.Pseudo)
 

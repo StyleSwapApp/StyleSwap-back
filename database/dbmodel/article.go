@@ -24,7 +24,7 @@ type ArticleRepository interface {
 	FindByID(id int) (*ArticleEntry, error)
 	FindByPseudo(pseudo string) ([]ArticleEntry, error)
 	Delete(id int) error
-	Update(entry *ArticleEntry) error
+	Update(entry *ArticleEntry, id int) error
 	FindImageByID(Id int) (string, error)
 }
 
@@ -86,13 +86,13 @@ func (r *articleRepository) Delete(id int) error {
     return nil
 }
 
-func (r *articleRepository) Update(entry *ArticleEntry) error {
-	if entry.ID == 0 {
-		return errors.New("missing required IDUser fields")
+func (r *articleRepository) Update(entry *ArticleEntry,id int) error {
+	if id == 0 {
+		return errors.New("missing required ID fields")
 	}
 	// Vérifier si l'entrée existe déjà dans la base de données
 	var existingEntry ArticleEntry
-	if err := r.db.First(&existingEntry, entry.ID).Error; err != nil {
+	if err := r.db.First(&existingEntry, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// L'enregistrement n'existe pas
 			return fmt.Errorf("entry with ID %v not found", entry.ID)

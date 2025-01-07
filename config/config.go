@@ -1,36 +1,58 @@
 package config
 
 import (
-	"StyleSwap/database/dbmodel"
 	"StyleSwap/database"
-	
-    "github.com/glebarez/sqlite"
+	"StyleSwap/database/dbmodel"
+	"fmt"
+	"log"
+	"os"
 
+	"github.com/joho/godotenv"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
+// Config contient les repositories nécessaires pour l'application
 type Config struct {
 	// Connexion aux repositories
 	ArticleRepository   dbmodel.ArticleRepository
-	UserRepository 		dbmodel.UserRepository
-	MessageRepository 	dbmodel.MessageRepository
+	UserRepository      dbmodel.UserRepository
+	MessageRepository   dbmodel.MessageRepository
 }
 
+// New initialise la configuration avec la base de données MySQL
 func New() (*Config, error) {
-	config := Config{}
-	
-	databaseSession, err := gorm.Open(sqlite.Open("StyleSwap_api.db"), &gorm.Config{})
-    if err != nil {
-        return &config, err
-    }
+	// Charger les variables d'environnement
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Erreur lors du chargement du fichier .env:", err)
+	}
 
-    // Migration des modèles
-    database.Migrate(databaseSession)
+	// Construire le DSN MySQL
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+
+	// Se connecter à la base de données MySQL
+	databaseSession, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("erreur lors de la connexion à la base de données: %v", err)
+	}
+
+	// Migration des modèles
+	database.Migrate(databaseSession)
 
 	// Initialisation des repositories
-	config.ArticleRepository = dbmodel.NewArticleEntryRepository(databaseSession)
-	config.UserRepository = dbmodel.NewUSerEntryRepository(databaseSession)
-	config.MessageRepository = dbmodel.NewMessageEntryRepository(databaseSession)
+	config := &Config{
+		ArticleRepository: dbmodel.NewArticleEntryRepository(databaseSession),
+		UserRepository:    dbmodel.NewUSerEntryRepository(databaseSession),
+		MessageRepository: dbmodel.NewMessageEntryRepository(databaseSession),
+	}
 
-	return &config, nil
+	return config, nil
 }

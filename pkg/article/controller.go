@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 )
@@ -134,32 +135,50 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 }
 
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
-	req := &model.ArticleUpdateRequest{}
-	if errRequest := render.Bind(r, req); errRequest != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+	idstring := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idstring)
+	utils.HandleError(err, "Error while converting article ID to integer")
+	pseudo_user := r.FormValue("userPseudo")
+	if pseudo_user == "" {
+		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
 		return
 	}
+	article_name := r.FormValue("name")
+	article_price_str := r.FormValue("price")
+	article_price, err := strconv.Atoi(article_price_str)
+	utils.HandleError(err, "Error while converting price to integer")
+	article_size := r.FormValue("size")
+	article_brand := r.FormValue("brand")
+	article_description := r.FormValue("description")
+	article_image := r.FormValue("image")
 
 	article := &dbmodel.ArticleEntry{
-		PseudoUser:  req.UserPseudo,
-		Name:        req.ArticleName,
-		Price:       req.ArticlePrice,
-		Size:        req.ArticleSize,
-		Brand:       req.ArticleBrand,
-		Description: req.ArticleDescription,
-		ImageURL:    req.ArticleImage,
+		PseudoUser:  pseudo_user,
+		Name:        article_name,
+		Price:       article_price,
+		Size:        article_size,
+		Brand:       article_brand,
+		Description: article_description,
+		ImageURL:    article_image,
 	}
 
-	errUpdate := config.ArticleRepository.Update(article)
+	errUpdate := config.ArticleRepository.Update(article, id)
 	utils.HandleError(errUpdate, "Error while updating article in database")
 
 	render.JSON(w, r, map[string]string{"message": "Article updated successfully"})
 }
 
 func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request, Id int) (model.ArticleResponse, error) {
-	req := &model.ArticleDeleteRequest{}
-	article, err := config.ArticleRepository.FindByID(req.ArticleId)
+	// Récupérer l'ID de l'article à partir des paramètres de l'URL
+	ArticleID := chi.URLParam(r, "id")
+	ArticleIDInt, err := strconv.Atoi(ArticleID)
+	utils.HandleError(err, "Error while converting article ID to integer")
+
+	// Rechercher l'article dans la base de données
+	article, err := config.ArticleRepository.FindByID(ArticleIDInt)
 	utils.HandleError(err, "Error while fetching article from database")
+
+	//Les données de réponse
 	res := model.ArticleResponse{
 		ArticleId:          int(article.ID),
 		UserPseudo:         article.PseudoUser,
