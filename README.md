@@ -13,126 +13,31 @@ L'objectif de StyleSwap est de permettre aux utilisateurs de vendre facilement l
 - **Paiements sécurisés :** Intégration de solutions de paiement sécurisées pour finaliser les transactions.
 
 ## 🛠️ Technologies utilisées
-- **Backend :** Node.js / Express
-- **Base de données :** MongoDB
+- **Backend :** Golang
+- **Base de données :** MySQL
 - **Authentification :** JWT
-- **Paiement :** Stripe
 - **Documentation API :** Swagger
 
-## 📦 Installation et démarrage
-
-1. Clonez le dépôt :
-   ```bash
-   git clone https://github.com/votre-utilisateur/styleswap.git
-   ```
-2. Accédez au dossier du projet :
-   ```bash
-   cd styleswap
-   ```
-3. Installez les dépendances :
-   ```bash
-   npm install
-   ```
-4. Configurez vos variables d'environnement dans un fichier `.env`.
-5. Lancez le serveur :
-   ```bash
-   npm start
-   ```
-
-L'API sera accessible à l'adresse : `http://localhost:3000`
-
-## 🧪 Tests
-Pour exécuter les tests :
-```bash
-npm test
-```
 
 ## 📄 Documentation API
 
-### 🔑 Authentification
-- **POST /api/auth/register** : Crée un nouvel utilisateur.
-  - **Body :**
-    ```json
-  {
-    "userfname":"Simon",
-    "userlname":"Louis",
-    "civilite":"M.",
-    "useremail":"Simon.Louis@gmail.com",
-    "address":"4 rue tomas narcejac",
-    "city":"Nantes",
-    "country":"France",
-    "code_postal":"44200",
-    "userpw":"SIMONGOAT",
-    "pseudo":"SimonL44",
-    "BirthDate":"2002-07-18"
-  }
-    ```
-  - **Réponse :** 201 Created
+la doc se fait à partir du fichier postman
 
-- **POST /api/auth/login** : Connecte un utilisateur existant.
-  - **Body :**
-    ```json
-    {
-      "email": "string",
-      "password": "string"
-    }
-    ```
-  - **Réponse :** 200 OK, retourne un token JWT
+**Pour ce qui est du serveur websocket, voici comment procéder:**
 
-### 👗 Gestion des annonces
-- **GET /api/ads** : Récupère toutes les annonces.
-  - **Réponse :** 200 OK, retourne une liste d'annonces
+Vous pourrez vous connecter au serveur à cette addresse, 
+l'API vous crée une session entre vous(id récupérer grâce au token JWT) et la personne avec qui vous souhaitez parler (idReceveur)
 
-- **POST /api/ads** : Crée une nouvelle annonce.
-  - **Body :**
-    ```json
-    {
-      "title": "string",
-      "description": "string",
-      "price": "number",
-      "category": "string"
-    }
-    ```
-  - **Réponse :** 201 Created
+  ws://localhost:8080/api/v1/chat/ws/{idReceveur}
 
-- **PUT /api/ads/:id** : Met à jour une annonce existante.
-  - **Body :**
-    ```json
-    {
-      "title": "string",
-      "description": "string",
-      "price": "number"
-    }
-    ```
-  - **Réponse :** 200 OK
+```
+{
+    "content":"bonjour"
+}
+```
 
-- **DELETE /api/ads/:id** : Supprime une annonce.
-  - **Réponse :** 204 No Content
+l'API récupère la conversation passée (stocké dans la BDD) et vous l'envoie
 
-### 💬 Messagerie
-- **GET /api/messages** : Récupère les messages de l'utilisateur connecté.
-  - **Réponse :** 200 OK
-
-- **POST /api/messages** : Envoie un message.
-  - **Body :**
-    ```json
-    {
-      "recipientId": "string",
-      "content": "string"
-    }
-    ```
-  - **Réponse :** 201 Created
-
-### 💳 Paiements
-- **POST /api/payments** : Traite un paiement.
-  - **Body :**
-    ```json
-    {
-      "adId": "string",
-      "paymentMethodId": "string"
-    }
-    ```
-  - **Réponse :** 200 OK
 
 ---
 **StyleSwap** – Parce que chaque vêtement mérite une seconde vie ! 👗♻️

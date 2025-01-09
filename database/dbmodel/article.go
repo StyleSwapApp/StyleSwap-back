@@ -14,6 +14,7 @@ type ArticleEntry struct {
 	Price       int    `json:"article_price"`
 	Size		string `json:"article_size"`
 	Brand       string `json:"article_brand"`
+	Color 	 	string `json:"article_color"`
 	Description string `json:"article_description"`
 	ImageURL    string `json:"article_image"`
 }

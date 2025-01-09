@@ -44,6 +44,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	utils.HandleError(err, "Error while converting price to integer")
 	size := r.FormValue("size")
 	brand := r.FormValue("brand")
+	color := r.FormValue("color")
 	description := r.FormValue("description")
 
 	// Vérification que tous les champs sont fournis
@@ -72,6 +73,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		Price:       price,
 		Size:        size,
 		Brand:       brand,
+		Color:		 color,
 		Description: description,
 		ImageURL:    imageURL,
 	}
@@ -130,6 +132,9 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 
 
 
+
+
+
 // DeleteArticleHandler gère la suppression d'un article en fonction de l'ID de l'article
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -156,17 +161,14 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	idstring := chi.URLParam(r, "id4Update")
 	id, errConv := strconv.Atoi(idstring)
 	utils.HandleError(errConv, "Error while converting article ID to integer")
-	pseudo_user := r.FormValue("userPseudo")
-	if pseudo_user == "" {
-		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
-		return
-	}
+
 	article_name := r.FormValue("name")
 	article_price_str := r.FormValue("price")
 	article_price, errConv := strconv.Atoi(article_price_str)
 	utils.HandleError(errConv, "Error while converting price to integer")
 	article_size := r.FormValue("size")
 	article_brand := r.FormValue("brand")
+	article_color := r.FormValue("color")
 	article_description := r.FormValue("description")
 	_, _,err := r.FormFile("image")
 
@@ -186,16 +188,16 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 		imageURL, err = utils.UploadToS3(file, filename)
 		utils.HandleError(err, "Error uploading image to S3")
 	}
+
 	article := &dbmodel.ArticleEntry{
-		PseudoUser:  pseudo_user,
 		Name:        article_name,
 		Price:       article_price,
 		Size:        article_size,
 		Brand:       article_brand,
+		Color:       article_color,
 		Description: article_description,
 		ImageURL:    imageURL,
 	}
-
 	errUpdate := config.ArticleRepository.Update(article, id)
 	utils.HandleError(errUpdate, "Error while updating article in database")
 
