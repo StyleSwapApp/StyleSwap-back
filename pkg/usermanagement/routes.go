@@ -10,7 +10,7 @@ func Routes(configuration *config.Config) *chi.Mux {
 	userConfig := New(configuration)
 	router := chi.NewRouter()
 
-	router.Put("/{id4Update}", userConfig.UpdateHandler)
+	router.Get("/user/{id4Update}", userConfig.UpdateHandler)
 	router.Delete("/{id4Delete}", userConfig.DeleteHandler)
 	router.Get("/{id}", userConfig.GetUserHandler)
 

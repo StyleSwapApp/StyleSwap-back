@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -15,7 +16,7 @@ type UserEntry struct {
 	Address   string    `json:"user_address"`
 	City      string    `json:"user_city"`
 	Country   string    `json:"user_country"`
-	UserEmail string    `json:"user_email" gorm:"unique"`	
+	UserEmail string    `json:"user_email" gorm:"unique"`
 	Password  string    `json:"user_password"`
 	Pseudo    string    `json:"pseudo" gorm:"unique"`
 	BirthDate time.Time `json:"user_birthdate"`
@@ -73,42 +74,42 @@ func (r *userRepository) Update(id int, updatedData *UserEntry) error {
 	}
 
 	// Comparer chaque champ pour voir s'il a changé et mettre à jour seulement ceux qui ont changé
-	
+
 	userModif := existingUser
-	if existingUser.FName != updatedData.FName {
+	if existingUser.FName != updatedData.FName && updatedData.FName != "" {
 		userModif.FName = updatedData.FName
 	}
-	if existingUser.LName != updatedData.LName {
+	if existingUser.LName != updatedData.LName && updatedData.LName != "" {
 		userModif.LName = updatedData.LName
 	}
-	if existingUser.UserEmail != updatedData.UserEmail {
+	if existingUser.UserEmail != updatedData.UserEmail && updatedData.UserEmail != "" {
 		allUsers, err := r.FindAll()
 		if err != nil {
 			return fmt.Errorf("error fetching all users: %w", err)
 		}
-		for _, entry := range allUsers {
-			if entry.UserEmail == updatedData.UserEmail {
+		for _, user := range allUsers {
+			if user.UserEmail == updatedData.UserEmail {
 				return fmt.Errorf("user with email %s already exists", updatedData.UserEmail)
 			}
 		}
 		userModif.UserEmail = updatedData.UserEmail
 	}
-	if existingUser.Civilite != updatedData.Civilite {
+	if existingUser.Civilite != updatedData.Civilite && updatedData.Civilite != "" {
 		userModif.Civilite = updatedData.Civilite
 	}
-	if existingUser.Address != updatedData.Address {
+	if existingUser.Address != updatedData.Address && updatedData.Address != "" {
 		userModif.Address = updatedData.Address
 	}
-	if existingUser.City != updatedData.City {
+	if existingUser.City != updatedData.City && updatedData.City != "" {
 		userModif.City = updatedData.City
 	}
-	if existingUser.Country != updatedData.Country {
+	if existingUser.Country != updatedData.Country && updatedData.Country != "" {
 		userModif.Country = updatedData.Country
 	}
-	if existingUser.Password != updatedData.Password {
+	if existingUser.Password != updatedData.Password && updatedData.Password != "" {
 		return fmt.Errorf("password cannot be updated")
 	}
-	if existingUser.Pseudo != updatedData.Pseudo {
+	if existingUser.Pseudo != updatedData.Pseudo && updatedData.Pseudo != "" {
 		allUsers, err := r.FindAll()
 		if err != nil {
 			return fmt.Errorf("error fetching all users: %w", err)
@@ -120,7 +121,7 @@ func (r *userRepository) Update(id int, updatedData *UserEntry) error {
 		}
 		userModif.Pseudo = updatedData.Pseudo
 	}
-	if existingUser.BirthDate != updatedData.BirthDate {
+	if existingUser.BirthDate != updatedData.BirthDate && !updatedData.BirthDate.IsZero() {
 		userModif.BirthDate = updatedData.BirthDate
 	}
 

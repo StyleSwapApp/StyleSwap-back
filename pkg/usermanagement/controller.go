@@ -6,6 +6,7 @@ import (
 	"StyleSwap/pkg/model"
 	"StyleSwap/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -40,13 +41,19 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	req := &model.UserRequest{}
-	if err := render.Bind(r, req); err != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
+	err = json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Invalid JSON format",
+		})
 		return
 	}
-
-	dateB, err := time.Parse("2006-01-02", req.BirthDate)
-	utils.HandleError(err, "Error while parsing date")
+	var dateB time.Time
+	if req.BirthDate != "" {
+		dateB, err = time.Parse("2006-01-02", req.BirthDate)
+		utils.HandleError(err, "Error while parsing date")
+	}
 
 	userEntry := &dbmodel.UserEntry{
 		FName:     req.UserFName,
