@@ -121,7 +121,7 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 }
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
-	idArticle := chi.URLParam(r, "id")
+	idArticle := chi.URLParam(r, "id4Delete")
 	id, err := strconv.Atoi(idArticle)
 	utils.HandleError(err, "Error while converting article ID to integer")
 
@@ -136,7 +136,7 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 }
 
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
-	idstring := chi.URLParam(r, "id")
+	idstring := chi.URLParam(r, "id4Update")
 	id, err := strconv.Atoi(idstring)
 	utils.HandleError(err, "Error while converting article ID to integer")
 	pseudo_user := r.FormValue("userPseudo")

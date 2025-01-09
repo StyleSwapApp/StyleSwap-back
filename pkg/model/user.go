@@ -7,7 +7,6 @@ import (
 )
 
 type UserRequest struct {
-	UserID	  int    `json:"userID"`
 	UserFName string `json:"userfname"`
 	UserLName string `json:"userlname"`
 	Civilite  string `json:"civilite"`

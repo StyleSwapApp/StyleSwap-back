@@ -1,4 +1,4 @@
-package login
+package usermanagement
 
 import (
 	"StyleSwap/config"
@@ -10,7 +10,9 @@ func Routes(configuration *config.Config) *chi.Mux {
 	userConfig := New(configuration)
 	router := chi.NewRouter()
 
-	router.Get("/login", userConfig.LoginHandler)
+	router.Put("/{id4Update}", userConfig.UpdateHandler)
+	router.Delete("/{id4Delete}", userConfig.DeleteHandler)
+	router.Get("/{id}", userConfig.GetUserHandler)
 
 	return router
 }

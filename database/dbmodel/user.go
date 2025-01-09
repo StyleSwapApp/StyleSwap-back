@@ -73,6 +73,7 @@ func (r *userRepository) Update(id int, updatedData *UserEntry) error {
 	}
 
 	// Comparer chaque champ pour voir s'il a changé et mettre à jour seulement ceux qui ont changé
+	
 	userModif := existingUser
 	if existingUser.FName != updatedData.FName {
 		userModif.FName = updatedData.FName
