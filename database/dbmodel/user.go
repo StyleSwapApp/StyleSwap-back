@@ -106,9 +106,6 @@ func (r *userRepository) Update(id int, updatedData *UserEntry) error {
 	if existingUser.Country != updatedData.Country && updatedData.Country != "" {
 		userModif.Country = updatedData.Country
 	}
-	if existingUser.Password != updatedData.Password && updatedData.Password != "" {
-		return fmt.Errorf("password cannot be updated")
-	}
 	if existingUser.Pseudo != updatedData.Pseudo && updatedData.Pseudo != "" {
 		allUsers, err := r.FindAll()
 		if err != nil {

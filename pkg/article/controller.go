@@ -50,6 +50,9 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		render.JSON(w, r, map[string]string{"error": "Missing required fields"})
 		return
 	}
+	if size == "" || brand == "" || color == "" {
+		render.JSON(w, r, map[string]string{"Help": "Vous devriez remplir tous les champs"})
+	}
 
 	// Récupérer le fichier de la requête (champ "image")
 	file, _, err := r.FormFile("image")

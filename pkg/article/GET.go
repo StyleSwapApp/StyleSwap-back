@@ -28,6 +28,7 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 			ArticlePrice:       article.Price,
 			ArticleSize:        article.Size,
 			ArticleBrand:       article.Brand,
+			ArticleColor:	    article.Color,
 			ArticleDescription: article.Description,
 			ArticleImage:       article.ImageURL,
 		})
@@ -40,6 +41,10 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request) {
 	// Récupérer l'ID de l'article à partir des paramètres de l'URL
 	ArticleID := chi.URLParam(r, "id")
+	if ArticleID == "" {
+		render.JSON(w, r, map[string]string{"error": "Article ID is required"})
+		return
+	}
 	ArticleIDInt, err := strconv.Atoi(ArticleID)
 	utils.HandleError(err, "Error while converting article ID to integer")
 

@@ -61,32 +61,31 @@ func extractS3KeyFromURL(s3URL string) (string, error) {
 }
 
 func UploadToS3(file multipart.File, filename string) (string, error) {
-    sess, err := session.NewSession(&aws.Config{
-        Region: aws.String("us-west-2"),
-    })
-    HandleError(err, "Error creating a new session")
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("eu-west-3"),
+	})
+	HandleError(err, "Error creating a new session")
 
-    uploader := s3.New(sess)
+	uploader := s3.New(sess)
 
-    buffer := make([]byte, file.(sizer).Size())
-    file.Read(buffer)
-    fileBytes := bytes.NewReader(buffer)
-    fileType := http.DetectContentType(buffer)
+	buffer := make([]byte, file.(sizer).Size())
+	file.Read(buffer)
+	fileBytes := bytes.NewReader(buffer)
+	fileType := http.DetectContentType(buffer)
 
-    _, err = uploader.PutObject(&s3.PutObjectInput{
-        Bucket:        aws.String(os.Getenv("S3_BUCKET")),
-        Key:           aws.String(filename),
-        Body:          fileBytes,
-        ContentLength: aws.Int64(file.(sizer).Size()),
-        ContentType:   aws.String(fileType),
-    })
-    HandleError(err, "Error uploading image to S3")
-    return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", os.Getenv("S3_BUCKET"), filename), nil
+	_, err = uploader.PutObject(&s3.PutObjectInput{
+		Bucket:        aws.String(os.Getenv("S3_BUCKET")),
+		Key:           aws.String(filename),
+		Body:          fileBytes,
+		ContentLength: aws.Int64(file.(sizer).Size()),
+		ContentType:   aws.String(fileType),
+		ACL:           aws.String("public-read"),
+	})
+	HandleError(err, "Error uploading image to S3")
+	return fmt.Sprintf("https://%s.s3.eu-west-3.amazonaws.com/%s", os.Getenv("S3_BUCKET"), filename), nil
 
 }
 
 type sizer interface {
-
-    Size() int64
-
+	Size() int64
 }

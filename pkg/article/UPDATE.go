@@ -16,13 +16,21 @@ import (
 
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
 	idstring := chi.URLParam(r, "id4Update")
+	if idstring == "" {
+		render.JSON(w, r, map[string]string{"error": "Article ID is required"})
+		return
+	}
 	id, errConv := strconv.Atoi(idstring)
 	utils.HandleError(errConv, "Error while converting article ID to integer")
 
 	article_name := r.FormValue("name")
 	article_price_str := r.FormValue("price")
-	article_price, errConv := strconv.Atoi(article_price_str)
-	utils.HandleError(errConv, "Error while converting price to integer")
+
+	var article_price int
+	if article_price_str != "" {
+		article_price, errConv = strconv.Atoi(article_price_str)
+		utils.HandleError(errConv, "Error while converting price to integer")
+	}
 	article_size := r.FormValue("size")
 	article_brand := r.FormValue("brand")
 	article_color := r.FormValue("color")

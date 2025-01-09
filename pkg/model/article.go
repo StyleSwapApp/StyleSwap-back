@@ -24,6 +24,7 @@ type ArticleResponse struct {
 	ArticlePrice       int    `json:"article_price"`
 	ArticleSize        string `json:"article_size"`
 	ArticleBrand       string `json:"article_brand"`
+	ArticleColor       string `json:"article_color"`
 	ArticleDescription string `json:"article_description"`
 	ArticleImage       string `json:"article_image"`
 }

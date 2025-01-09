@@ -26,6 +26,10 @@ func New(configuration *config.Config) *UserConfig {
 
 func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) {
 	user := chi.URLParam(r, "id4Update")
+	if user == "" {
+		json.NewEncoder(w).Encode("User ID is required")
+		return
+	}
 	userInt, err := strconv.Atoi(user)
 	utils.HandleError(err, "Error while converting user ID to integer")
 
@@ -72,6 +76,10 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 
 func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id4Delete")
+	if id == "" {
+		json.NewEncoder(w).Encode("User ID is required")
+		return
+	}
 	idInt, err := strconv.Atoi(id)
 	utils.HandleError(err, "Error while converting user ID to integer")
 
