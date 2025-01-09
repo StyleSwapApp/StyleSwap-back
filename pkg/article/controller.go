@@ -60,7 +60,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	filename := fmt.Sprintf("%s.png", uniqueID) // Utiliser un nom unique pour éviter les collisions
 
 	// Télécharger l'image sur S3
-	imageURL, err := uploadToS3(file, filename)
+	imageURL, err := utils.UploadToS3(file, filename)
 	utils.HandleError(err, "Error uploading image to S3")
 
 	// Créer un nouvel article dans la base de données
@@ -121,17 +121,18 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 }
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
-	req := &model.ArticleDeleteRequest{}
-	if errRequest := render.Bind(r, req); errRequest != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
-		return
-	}
-	errBucket := config.DeleteImageFromS3(req.ArticleId)
+	idArticle := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idArticle)
+	utils.HandleError(err, "Error while converting article ID to integer")
+
+	article, err := config.ArticleRepository.FindByID(id)
+	utils.HandleError(err, "Error while fetching article from database")
+
+	errBucket := utils.DeleteImageFromS3(article.ImageURL)
 	utils.HandleError(errBucket, "Error while deleting image from S3")
 
-	errBDD := config.ArticleRepository.Delete(req.ArticleId)
+	errBDD := config.ArticleRepository.Delete(int(article.ID))
 	utils.HandleError(errBDD, "Error while deleting article from database")
-
 }
 
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +169,7 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	render.JSON(w, r, map[string]string{"message": "Article updated successfully"})
 }
 
-func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request, Id int) (model.ArticleResponse, error) {
+func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request){
 	// Récupérer l'ID de l'article à partir des paramètres de l'URL
 	ArticleID := chi.URLParam(r, "id")
 	ArticleIDInt, err := strconv.Atoi(ArticleID)
@@ -190,5 +191,4 @@ func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request
 		ArticleImage:       article.ImageURL,
 	}
 	render.JSON(w, r, res)
-	return res, nil
 }

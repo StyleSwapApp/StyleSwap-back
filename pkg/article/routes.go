@@ -14,6 +14,7 @@ func Routes(configuration *config.Config) *chi.Mux{
 	router.Get("/getArticle", articleConfig.GetArticlesHandler)
 	router.Delete("/deleteArticle", articleConfig.DeleteArticleHandler)
 	router.Put("/updateArticle", articleConfig.UpdateArticleHandler)
+	router.Get("/{id}", articleConfig.GetArticleID)
 	
 
 	return router

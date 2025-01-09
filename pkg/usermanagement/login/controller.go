@@ -7,8 +7,10 @@ import (
 	"StyleSwap/pkg/model"
 	"StyleSwap/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -18,6 +20,19 @@ import (
 
 type UserConfig struct {
 	*config.Config
+}
+
+// extractS3KeyFromURL extracts the S3 key from the given URL
+func extractS3KeyFromURL(s3URL string) (string, error) {
+	// Vérifier si l'URL commence bien par le préfixe
+	const s3Prefix = "https://styleswapbucket.s3.eu-west-3.amazonaws.com/"
+	if !strings.HasPrefix(s3URL, s3Prefix) {
+		return "", fmt.Errorf("URL S3 invalide")
+	}
+
+	key := strings.TrimPrefix(s3URL, s3Prefix)
+
+	return key, nil
 }
 
 func New(configuration *config.Config) *UserConfig {
@@ -79,16 +94,35 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 	render.JSON(w, r, "User updated")
 }
 
-// DeleteHandler use to delete a user
+// DeleteHandler use to delete a user and their articles
 
 func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) {
-	req := &model.UserSearchRequest{}
-	if err := render.Bind(r, req); err != nil {
-		render.JSON(w, r, map[string]string{"error": "Invalid request payload"})
-		return
-	}
+	id := chi.URLParam(r, "id")
+	idInt, err := strconv.Atoi(id)
+	utils.HandleError(err, "Error while converting user ID to integer")
 
-	config.UserRepository.Delete(req.UserID)
+	user, err:= config.UserRepository.FindByID(idInt)
+	utils.HandleError(err, "Error while fetching user from database")
+
+	// Supprimer les articles de l'utilisateur
+	articles, err := config.ArticleRepository.FindByPseudo(user.Pseudo)
+	utils.HandleError(err, "Error while fetching articles from database")
+
+	for _, article := range articles {
+		// Supprimer l'article de la base de données
+		errBDD := config.ArticleRepository.Delete(int(article.ID))
+		utils.HandleError(errBDD, "Error while deleting article from database")
+
+		// Supprimer l'image de S3
+		errBucket := utils.DeleteImageFromS3(article.ImageURL)
+		utils.HandleError(errBucket, "Error while deleting image from S3")
+	}
+	
+
+	// Supprimer l'utilisateur de la base de données
+
+	errBDD := config.UserRepository.Delete(idInt)
+	utils.HandleError(errBDD, "Error while deleting user from database")
 	render.JSON(w, r, "User deleted")
 }
 
@@ -136,8 +170,4 @@ func (config *UserConfig) GetUserHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
-}
-
-func (config *UserConfig) NewPassword(w http.ResponseWriter, r *http.Request, Id int) error {
-	return nil
 }

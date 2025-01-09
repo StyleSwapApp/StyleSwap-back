@@ -53,11 +53,19 @@ npm test
 - **POST /api/auth/register** : Crée un nouvel utilisateur.
   - **Body :**
     ```json
-    {
-      "username": "string",
-      "email": "string",
-      "password": "string"
-    }
+  {
+    "userfname":"Simon",
+    "userlname":"Louis",
+    "civilite":"M.",
+    "useremail":"Simon.Louis@gmail.com",
+    "address":"4 rue tomas narcejac",
+    "city":"Nantes",
+    "country":"France",
+    "code_postal":"44200",
+    "userpw":"SIMONGOAT",
+    "pseudo":"SimonL44",
+    "BirthDate":"2002-07-18"
+  }
     ```
   - **Réponse :** 201 Created
 
