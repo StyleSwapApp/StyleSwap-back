@@ -6,7 +6,6 @@ import (
 	"StyleSwap/pkg/model"
 	"StyleSwap/utils"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
