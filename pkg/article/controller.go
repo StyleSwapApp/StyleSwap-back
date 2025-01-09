@@ -22,6 +22,8 @@ func New(configuration *config.Config) *ArticleConfig {
 	return &ArticleConfig{configuration}
 }
 
+// ArticleHandler gère la création d'un nouvel article
+
 func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse la requête multipart pour obtenir les données de formulaire
 	err := r.ParseMultipartForm(10 << 20) // Limite de taille de 10 Mo pour l'image
@@ -84,6 +86,11 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	render.JSON(w, r, map[string]string{"message": "Article added successfully", "image_url": imageURL})
 }
 
+
+
+// GetArticlesHandler gère la récupération de tous les articles ou d'un article spécifique en fonction du paramètre UserPseudo
+
+
 func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.Request) {
 	Pseudo := r.URL.Query().Get("UserPseudo")
 	var articles []dbmodel.ArticleEntry
@@ -120,6 +127,11 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 	render.JSON(w, r, articleResponses)
 }
 
+
+
+
+// DeleteArticleHandler gère la suppression d'un article en fonction de l'ID de l'article
+
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
 	idArticle := chi.URLParam(r, "id4Delete")
 	id, err := strconv.Atoi(idArticle)
@@ -135,10 +147,15 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 	utils.HandleError(errBDD, "Error while deleting article from database")
 }
 
+
+
+
+// UpdateArticleHandler gère la mise à jour d'un article en fonction de l'ID de l'article
+
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
 	idstring := chi.URLParam(r, "id4Update")
-	id, err := strconv.Atoi(idstring)
-	utils.HandleError(err, "Error while converting article ID to integer")
+	id, errConv := strconv.Atoi(idstring)
+	utils.HandleError(errConv, "Error while converting article ID to integer")
 	pseudo_user := r.FormValue("userPseudo")
 	if pseudo_user == "" {
 		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
@@ -146,13 +163,29 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	}
 	article_name := r.FormValue("name")
 	article_price_str := r.FormValue("price")
-	article_price, err := strconv.Atoi(article_price_str)
-	utils.HandleError(err, "Error while converting price to integer")
+	article_price, errConv := strconv.Atoi(article_price_str)
+	utils.HandleError(errConv, "Error while converting price to integer")
 	article_size := r.FormValue("size")
 	article_brand := r.FormValue("brand")
 	article_description := r.FormValue("description")
-	article_image := r.FormValue("image")
+	_, _,err := r.FormFile("image")
 
+	imageURL := ""
+
+	if err == nil {
+		// Upload the image to S3
+		file, _, err := r.FormFile("image")
+		utils.HandleError(err, "Error retrieving image from form data")
+		defer file.Close()
+
+		// Générer un nom unique pour le fichier sur S3
+		uniqueID := uuid.New().String()
+		filename := fmt.Sprintf("%s.png", uniqueID) // Utiliser un nom unique pour éviter les collisions
+
+		// Télécharger l'image sur S3
+		imageURL, err = utils.UploadToS3(file, filename)
+		utils.HandleError(err, "Error uploading image to S3")
+	}
 	article := &dbmodel.ArticleEntry{
 		PseudoUser:  pseudo_user,
 		Name:        article_name,
@@ -160,7 +193,7 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 		Size:        article_size,
 		Brand:       article_brand,
 		Description: article_description,
-		ImageURL:    article_image,
+		ImageURL:    imageURL,
 	}
 
 	errUpdate := config.ArticleRepository.Update(article, id)
@@ -168,6 +201,11 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 
 	render.JSON(w, r, map[string]string{"message": "Article updated successfully"})
 }
+
+
+
+
+// GetArticleID gère la récupération d'un article en fonction de l'ID de l'article
 
 func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request){
 	// Récupérer l'ID de l'article à partir des paramètres de l'URL

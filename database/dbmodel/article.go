@@ -101,6 +101,29 @@ func (r *articleRepository) Update(entry *ArticleEntry,id int) error {
     	return err
 	}
 
+	// Mettre à jour les champs de l'entrée existante
+	if existingEntry.PseudoUser != entry.PseudoUser {
+		existingEntry.PseudoUser = entry.PseudoUser
+	}
+	if existingEntry.Name != entry.Name {
+		existingEntry.Name = entry.Name
+	}
+	if existingEntry.Price != entry.Price {
+		existingEntry.Price = entry.Price
+	}
+	if existingEntry.Size != entry.Size {
+		existingEntry.Size = entry.Size
+	}
+	if existingEntry.Brand != entry.Brand {
+		existingEntry.Brand = entry.Brand
+	}
+	if existingEntry.Description != entry.Description {
+		existingEntry.Description = entry.Description
+	}
+	if existingEntry.ImageURL != entry.ImageURL {
+		existingEntry.ImageURL = entry.ImageURL
+	}
+
 	// Si l'enregistrement existe, effectuer la sauvegarde
 	if err := r.db.Save(entry).Error; err != nil {
 		return err
