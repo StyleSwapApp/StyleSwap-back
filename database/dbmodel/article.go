@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"StyleSwap/pkg/filter"
 )
 
 type ArticleEntry struct {
@@ -27,6 +28,7 @@ type ArticleRepository interface {
 	Delete(id int) error
 	Update(entry *ArticleEntry, id int) error
 	FindImageByID(Id int) (string, error)
+	FindByCriteria(criteria *filter.FilterCriteria) ([]ArticleEntry, error)
 }
 
 type articleRepository struct {
@@ -130,4 +132,32 @@ func (r *articleRepository) Update(entry *ArticleEntry,id int) error {
 		return err
 	}
 	return nil
+}
+
+func (r *articleRepository) FindByCriteria(criteria *filter.FilterCriteria) ([]ArticleEntry, error) {
+	query := "SELECT * FROM article_entries WHERE 1=1"
+	args := []interface{}{}
+
+	if criteria.Pseudo != "" {
+		query += " AND user_pseudo = ?"
+		args = append(args, criteria.Pseudo)
+	}
+	if criteria.Couleur != "" {
+		query += " AND article_color = ?"
+		args = append(args, criteria.Couleur)
+	}
+	if criteria.Marque != "" {
+		query += " AND article_brand = ?"
+		args = append(args, criteria.Marque)
+	}
+	if criteria.Taille != "" {
+		query += " AND article_size = ?"
+		args = append(args, criteria.Taille)
+	}
+
+	var articles []ArticleEntry
+	if err := r.db.Raw(query, args...).Scan(&articles).Error; err != nil {
+		return nil, err
+	}
+	return articles, nil
 }

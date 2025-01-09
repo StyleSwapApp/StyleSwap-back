@@ -3,6 +3,7 @@ package article
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
+	"StyleSwap/pkg/filter"
 	"StyleSwap/pkg/model"
 	"StyleSwap/utils"
 	"fmt"
@@ -73,7 +74,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		Price:       price,
 		Size:        size,
 		Brand:       brand,
-		Color:		 color,
+		Color:       color,
 		Description: description,
 		ImageURL:    imageURL,
 	}
@@ -88,32 +89,20 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	render.JSON(w, r, map[string]string{"message": "Article added successfully", "image_url": imageURL})
 }
 
-
-
-// GetArticlesHandler gère la récupération de tous les articles ou d'un article spécifique en fonction du paramètre UserPseudo
-
+// GetArticlesHandler gère la récupération de tous les articles ou d'un article spécifique en fonction des filtres
 
 func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.Request) {
-	Pseudo := r.URL.Query().Get("UserPseudo")
-	var articles []dbmodel.ArticleEntry
-	var err error
 
-	// Recherche des articles en fonction du paramètre UserPseudo
-	if Pseudo != "" {
-		articles, err = config.ArticleRepository.FindByPseudo(Pseudo)
-	} else {
-		articles, err = config.ArticleRepository.FindAll()
-	}
+	// Extraire les filtres 
+	filtre := filter.ParseFilterCriteria(r)
+	articles, err := config.ArticleRepository.FindByCriteria(filtre)
+	utils.HandleError(err, "Error while fetching articles from database")
 
-	// Gestion des erreurs si la recherche échoue
-	utils.HandleError(err, "Error while fetching articles from the database")
-
-	// Créer un tableau pour contenir toutes les réponses d'articles
-	var articleResponses []model.ArticleResponse
-
-	// Préparer les données de réponse
+	// Les données de réponse
+	var res []model.ArticleResponse
 	for _, article := range articles {
-		res := model.ArticleResponse{
+		res = append(res, model.ArticleResponse{
+			ArticleId:          int(article.ID),
 			UserPseudo:         article.PseudoUser,
 			ArticleName:        article.Name,
 			ArticlePrice:       article.Price,
@@ -121,19 +110,10 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 			ArticleBrand:       article.Brand,
 			ArticleDescription: article.Description,
 			ArticleImage:       article.ImageURL,
-		}
-		articleResponses = append(articleResponses, res)
+		})
 	}
-
-	// Renvoyer tous les articles dans une seule réponse
-	render.JSON(w, r, articleResponses)
+	render.JSON(w, r, res)
 }
-
-
-
-
-
-
 
 // DeleteArticleHandler gère la suppression d'un article en fonction de l'ID de l'article
 
@@ -152,9 +132,6 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 	utils.HandleError(errBDD, "Error while deleting article from database")
 }
 
-
-
-
 // UpdateArticleHandler gère la mise à jour d'un article en fonction de l'ID de l'article
 
 func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -170,7 +147,7 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	article_brand := r.FormValue("brand")
 	article_color := r.FormValue("color")
 	article_description := r.FormValue("description")
-	_, _,err := r.FormFile("image")
+	_, _, err := r.FormFile("image")
 
 	imageURL := ""
 
@@ -204,12 +181,9 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	render.JSON(w, r, map[string]string{"message": "Article updated successfully"})
 }
 
-
-
-
 // GetArticleID gère la récupération d'un article en fonction de l'ID de l'article
 
-func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request){
+func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request) {
 	// Récupérer l'ID de l'article à partir des paramètres de l'URL
 	ArticleID := chi.URLParam(r, "id")
 	ArticleIDInt, err := strconv.Atoi(ArticleID)
