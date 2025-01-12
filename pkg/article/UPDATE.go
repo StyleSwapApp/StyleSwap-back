@@ -23,6 +23,12 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 	id, errConv := strconv.Atoi(idstring)
 	utils.HandleError(errConv, "Error while converting article ID to integer")
 
+	article, errArticle := config.ArticleRepository.FindByID(id)
+	utils.HandleError(errArticle, "Error while fetching article from database")
+
+	// Vérifier que l'utilisateur est autorisé à modifier l'article
+	VerifArticle(config, article, w, r)
+
 	article_name := r.FormValue("name")
 	article_price_str := r.FormValue("price")
 
@@ -54,7 +60,7 @@ func (config *ArticleConfig) UpdateArticleHandler(w http.ResponseWriter, r *http
 		utils.HandleError(err, "Error uploading image to S3")
 	}
 
-	article := &dbmodel.ArticleEntry{
+	article = &dbmodel.ArticleEntry{
 		Name:        article_name,
 		Price:       article_price,
 		Size:        article_size,

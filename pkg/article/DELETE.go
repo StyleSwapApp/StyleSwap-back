@@ -12,6 +12,7 @@ import (
 
 func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
 	idArticle := chi.URLParam(r, "id4Delete")
+
 	if idArticle == "" {
 		json.NewEncoder(w).Encode("Article ID is required")
 		return
@@ -21,6 +22,9 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 
 	article, err := config.ArticleRepository.FindByID(id)
 	utils.HandleError(err, "Error while fetching article from database")
+
+	//Vérifier que l'utilisateur est autorisé à supprimer l'article
+	VerifArticle(config, article, w, r)
 
 	if article != nil {
 		fmt.Println("Article found")

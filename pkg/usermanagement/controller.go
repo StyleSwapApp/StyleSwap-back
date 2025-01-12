@@ -3,6 +3,7 @@ package usermanagement
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
+	"StyleSwap/pkg/auth"
 	"StyleSwap/pkg/model"
 	"StyleSwap/utils"
 	"encoding/json"
@@ -25,16 +26,16 @@ func New(configuration *config.Config) *UserConfig {
 // UpdateHandler use to update a user
 
 func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) {
-	user := chi.URLParam(r, "id4Update")
-	if user == "" {
+	userParam := chi.URLParam(r, "id4Update")
+	if userParam == "" {
 		json.NewEncoder(w).Encode("User ID is required")
 		return
 	}
-	userInt, err := strconv.Atoi(user)
+	userInt, err := strconv.Atoi(userParam)
 	utils.HandleError(err, "Error while converting user ID to integer")
 
 	//vérifier que l'utilisateur existe
-	_, err = config.UserRepository.FindByID(userInt)
+	user, err := config.UserRepository.FindByID(userInt)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -42,6 +43,9 @@ func (config *UserConfig) UpdateHandler(w http.ResponseWriter, r *http.Request) 
 		})
 		return
 	}
+
+	// Vérifier que l'utilisateur est autorisé à modifier le compte
+	VerifUser(user, w, r)
 
 	req := &model.UserRequest{}
 	err = json.NewDecoder(r.Body).Decode(req)
@@ -85,6 +89,9 @@ func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) 
 
 	user, err := config.UserRepository.FindByID(idInt)
 	utils.HandleError(err, "Error while fetching user from database")
+
+	// Vérifier que l'utilisateur est autorisé à supprimer le compte
+	VerifUser(user, w, r)
 
 	// Supprimer les articles de l'utilisateur
 	articles, err := config.ArticleRepository.FindByPseudo(user.Pseudo)
@@ -134,6 +141,9 @@ func (config *UserConfig) GetUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Vérifier que l'utilisateur est autorisé à voir les informations
+	VerifUser(user, w, r)
+
 	// Construire la réponse
 	res := model.UserCompletResponse{
 		UserFName: user.FName,
@@ -151,4 +161,17 @@ func (config *UserConfig) GetUserHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
+}
+
+func VerifUser(user *dbmodel.UserEntry, w http.ResponseWriter, r *http.Request) {
+	userConnect, ok := auth.GetUserIDFromContext(r.Context())
+	if ok {
+		if user.Pseudo != userConnect {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "You are not authorized to delete this user",
+			})
+			return
+		}
+	}
 }

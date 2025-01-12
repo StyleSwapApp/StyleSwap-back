@@ -52,6 +52,9 @@ func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request
 	article, err := config.ArticleRepository.FindByID(ArticleIDInt)
 	utils.HandleError(err, "Error while fetching article from database")
 
+	// Vérifier que le User est autorisé à voir l'article
+	VerifArticle(config, article, w, r)
+
 	//Les données de réponse
 	res := model.ArticleResponse{
 		ArticleId:          int(article.ID),

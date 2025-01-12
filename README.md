@@ -21,9 +21,13 @@ L'objectif de StyleSwap est de permettre aux utilisateurs de vendre facilement l
 
 ## 📄 Documentation API
 
-la doc se fait à partir du fichier postman
+Doc Postman: 
+
+https://documenter.getpostman.com/view/31025137/2sAYQWKtN7
 
 **Pour ce qui est du serveur websocket, voici comment procéder:**
+
+https://styleswap-7059.postman.co/workspace/StyleSwap-Workspace~4e439639-a50e-4301-ad0f-b7a9ec0f8e53/collection/6776a59dfbeb7916c7e6f45a?action=share&creator=31025137&active-environment=31025137-6585c1b9-6f66-4dff-b063-8dde845fdab7
 
 Vous pourrez vous connecter au serveur à cette addresse, 
 l'API vous crée une session entre vous(id récupérer grâce au token JWT) et la personne avec qui vous souhaitez parler (idReceveur)

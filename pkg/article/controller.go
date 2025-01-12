@@ -3,6 +3,7 @@ package article
 import (
 	"StyleSwap/config"
 	"StyleSwap/database/dbmodel"
+	"StyleSwap/pkg/auth"
 	"StyleSwap/utils"
 	"fmt"
 	"net/http"
@@ -26,14 +27,20 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	// Parse la requête multipart pour obtenir les données de formulaire
 	err := r.ParseMultipartForm(10 << 20) // Limite de taille de 10 Mo pour l'image
 	utils.HandleError(err, "Error parsing form data")
+
 	// Récupérer le pseudo de l'utilisateur
-	userpseudo := r.FormValue("userPseudo")
-	if userpseudo == "" {
-		render.JSON(w, r, map[string]string{"error": "Missing user pseudo"})
+	User, ok := auth.GetUserIDFromContext(r.Context())
+	UserInt, err := strconv.Atoi(User)
+	utils.HandleError(err, "Error while converting user ID to integer")
+	var userpseudo *dbmodel.UserEntry
+
+	if !ok {
+		render.JSON(w, r, map[string]string{"error": "Unauthorized"})
 		return
+	} else {
+		userpseudo, err = config.UserRepository.FindByID(UserInt)
+		utils.HandleError(err, "Error while fetching user from the database")
 	}
-	user, err := config.UserRepository.FindByPseudo(userpseudo)
-	utils.HandleError(err, "Error while fetching user from the database")
 
 	// Extraire les données de l'article du formulaire
 	name := r.FormValue("name")
@@ -69,7 +76,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
-		PseudoUser:  user.Pseudo,
+		PseudoUser:  userpseudo.Pseudo,
 		Name:        name,
 		Price:       price,
 		Size:        size,
@@ -87,4 +94,21 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Répondre avec un message de succès
 	render.JSON(w, r, map[string]string{"message": "Article added successfully", "image_url": imageURL})
+}
+
+
+// Vérifie que l'utilisateur est autorisé à avoir une action sur l'article 
+
+func VerifArticle(config *ArticleConfig, article *dbmodel.ArticleEntry, w http.ResponseWriter, r *http.Request) {
+	user, ok := auth.GetUserIDFromContext(r.Context())
+	if ok {
+		articleUserId, err := config.UserRepository.FindByPseudo(article.PseudoUser)
+		utils.HandleError(err, "Error while fetching article from database")
+		userID, err := strconv.Atoi(user)
+		utils.HandleError(err, "Error while converting user ID to integer")
+		if uint(userID) != articleUserId.ID {
+			render.JSON(w, r, map[string]string{"error": "Unauthorized"})
+			return
+		}
+	}
 }
