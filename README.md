@@ -48,8 +48,8 @@ l'API récupère la conversation passée (stocké dans la BDD) et vous l'envoie
 
 ## Devs en cours: 
 
-Fonction de payement
-Fonction de recherche 
+- **Fonction de payement**
+- **Fonction de recherche** 
   - recherche par User
   - recherche par nom d'article
 ---
