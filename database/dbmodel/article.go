@@ -18,7 +18,7 @@ type ArticleEntry struct {
 	Brand       string `json:"article_brand"`
 	Color       string `json:"article_color"`
 	Description string `json:"article_description"`
-	ImageURL    string `json:"article_image"`
+	ImageData   []byte `gorm:"type:longblob" json:"article_image"`
 }
 
 type ArticleRepository interface {
@@ -80,7 +80,7 @@ func (r *articleRepository) FindImageByID(Id int) (string, error) {
 	if err := r.db.First(&entry, Id).Error; err != nil {
 		return "", err
 	}
-	return entry.ImageURL, nil
+	return string(entry.ImageData), nil
 }
 
 func (r *articleRepository) Delete(id int) error {
@@ -123,9 +123,6 @@ func (r *articleRepository) Update(entry *ArticleEntry, id int) error {
 	}
 	if existingEntry.Description != entry.Description && entry.Description != "" {
 		existingEntry.Description = entry.Description
-	}
-	if existingEntry.ImageURL != entry.ImageURL && entry.ImageURL != "" {
-		existingEntry.ImageURL = entry.ImageURL
 	}
 
 	// Si l'enregistrement existe, effectuer la sauvegarde

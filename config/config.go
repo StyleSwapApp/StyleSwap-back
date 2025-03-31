@@ -15,9 +15,10 @@ import (
 // Config contient les repositories nécessaires pour l'application
 type Config struct {
 	// Connexion aux repositories
-	ArticleRepository   dbmodel.ArticleRepository
-	UserRepository      dbmodel.UserRepository
-	MessageRepository   dbmodel.MessageRepository
+	ArticleRepository dbmodel.ArticleRepository
+	UserRepository    dbmodel.UserRepository
+	MessageRepository dbmodel.MessageRepository
+	ImageRepository   dbmodel.ImageRepository
 }
 
 // New initialise la configuration avec la base de données MySQL
@@ -52,6 +53,7 @@ func New() (*Config, error) {
 		ArticleRepository: dbmodel.NewArticleEntryRepository(databaseSession),
 		UserRepository:    dbmodel.NewUSerEntryRepository(databaseSession),
 		MessageRepository: dbmodel.NewMessageEntryRepository(databaseSession),
+		ImageRepository:   dbmodel.NewImageEntryRepository(databaseSession),
 	}
 
 	return config, nil

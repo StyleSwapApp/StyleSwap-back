@@ -101,10 +101,6 @@ func (config *UserConfig) DeleteHandler(w http.ResponseWriter, r *http.Request) 
 		// Supprimer l'article de la base de données
 		errBDD := config.ArticleRepository.Delete(int(article.ID))
 		utils.HandleError(errBDD, "Error while deleting article from database")
-
-		// Supprimer l'image de S3
-		errBucket := utils.DeleteImageFromS3(article.ImageURL)
-		utils.HandleError(errBucket, "Error while deleting image from S3")
 	}
 
 	// Supprimer l'utilisateur de la base de données

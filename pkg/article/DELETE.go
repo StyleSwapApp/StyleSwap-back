@@ -3,7 +3,6 @@ package article
 import (
 	"StyleSwap/utils"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -25,15 +24,6 @@ func (config *ArticleConfig) DeleteArticleHandler(w http.ResponseWriter, r *http
 
 	//Vérifier que l'utilisateur est autorisé à supprimer l'article
 	VerifArticle(config, article, w, r)
-
-	if article != nil {
-		fmt.Println("Article found")
-		errBucket := utils.DeleteImageFromS3(article.ImageURL)
-		utils.HandleError(errBucket, "Error while deleting image from S3")
-	} else {
-		json.NewEncoder(w).Encode("Article not found")
-		return // Return if article not found
-	}
 
 	errBDD := config.ArticleRepository.Delete(int(article.ID))
 	utils.HandleError(errBDD, "Error while deleting article from database")

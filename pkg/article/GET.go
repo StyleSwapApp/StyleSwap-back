@@ -4,6 +4,7 @@ import (
 	"StyleSwap/pkg/filter"
 	"StyleSwap/pkg/model"
 	"StyleSwap/utils"
+	"encoding/base64"
 	"net/http"
 	"strconv"
 
@@ -12,8 +13,7 @@ import (
 )
 
 func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.Request) {
-
-	// Extraire les filtres 
+	// Extraire les filtres
 	filtre := filter.ParseFilterCriteria(r)
 	articles, err := config.ArticleRepository.FindByCriteria(filtre)
 	utils.HandleError(err, "Error while fetching articles from database")
@@ -21,6 +21,11 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 	// Les données de réponse
 	var res []model.ArticleResponse
 	for _, article := range articles {
+		var imageBase64 string
+		if article.ImageData != nil { // ✅ Évite d'encoder nil en base64
+			imageBase64 = base64.StdEncoding.EncodeToString(article.ImageData)
+		}
+
 		res = append(res, model.ArticleResponse{
 			ArticleId:          int(article.ID),
 			UserPseudo:         article.PseudoUser,
@@ -28,11 +33,12 @@ func (config *ArticleConfig) GetArticlesHandler(w http.ResponseWriter, r *http.R
 			ArticlePrice:       article.Price,
 			ArticleSize:        article.Size,
 			ArticleBrand:       article.Brand,
-			ArticleColor:	    article.Color,
+			ArticleColor:       article.Color,
 			ArticleDescription: article.Description,
-			ArticleImage:       article.ImageURL,
+			ArticleImage:       imageBase64, // ✅ Gère le cas où l'image est absente
 		})
 	}
+
 	render.JSON(w, r, res)
 }
 
@@ -64,7 +70,7 @@ func (config *ArticleConfig) GetArticleID(w http.ResponseWriter, r *http.Request
 		ArticleSize:        article.Size,
 		ArticleBrand:       article.Brand,
 		ArticleDescription: article.Description,
-		ArticleImage:       article.ImageURL,
+		ArticleImage:       string(article.ImageData),
 	}
 	render.JSON(w, r, res)
 }

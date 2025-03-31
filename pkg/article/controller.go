@@ -5,12 +5,11 @@ import (
 	"StyleSwap/database/dbmodel"
 	"StyleSwap/pkg/auth"
 	"StyleSwap/utils"
-	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/render"
-	"github.com/google/uuid"
 )
 
 type ArticleConfig struct {
@@ -30,15 +29,14 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 
 	// Récupérer le pseudo de l'utilisateur
 	User, ok := auth.GetUserIDFromContext(r.Context())
-	UserInt, err := strconv.Atoi(User)
-	utils.HandleError(err, "Error while converting user ID to integer")
-	var userpseudo *dbmodel.UserEntry
+
+	var userpseudo dbmodel.UserEntry
 
 	if !ok {
 		render.JSON(w, r, map[string]string{"error": "Unauthorized"})
 		return
 	} else {
-		userpseudo, err = config.UserRepository.FindByID(UserInt)
+		userpseudo, err = config.UserRepository.FindByPseudo(User)
 		utils.HandleError(err, "Error while fetching user from the database")
 	}
 
@@ -67,12 +65,12 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	defer file.Close()
 
 	// Générer un nom unique pour le fichier sur S3
-	uniqueID := uuid.New().String()
-	filename := fmt.Sprintf("%s.png", uniqueID) // Utiliser un nom unique pour éviter les collisions
-
-	// Télécharger l'image sur S3
-	imageURL, err := utils.UploadToS3(file, filename)
-	utils.HandleError(err, "Error uploading image to S3")
+	// Lire l'image en binaire
+	imageData, err := io.ReadAll(file)
+	if err != nil {
+		utils.HandleError(err, "Erreur lors de la lecture de l'image")
+		return
+	}
 
 	// Créer un nouvel article dans la base de données
 	articleEntry := &dbmodel.ArticleEntry{
@@ -83,7 +81,7 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 		Brand:       brand,
 		Color:       color,
 		Description: description,
-		ImageURL:    imageURL,
+		ImageData:   imageData,
 	}
 
 	// Ajouter l'article à la base de données
@@ -93,11 +91,10 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Répondre avec un message de succès
-	render.JSON(w, r, map[string]string{"message": "Article added successfully", "image_url": imageURL})
+	render.JSON(w, r, map[string]string{"message": "Article added successfully"})
 }
 
-
-// Vérifie que l'utilisateur est autorisé à avoir une action sur l'article 
+// Vérifie que l'utilisateur est autorisé à avoir une action sur l'article
 
 func VerifArticle(config *ArticleConfig, article *dbmodel.ArticleEntry, w http.ResponseWriter, r *http.Request) {
 	user, ok := auth.GetUserIDFromContext(r.Context())

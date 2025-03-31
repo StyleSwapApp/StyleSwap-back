@@ -10,7 +10,7 @@ func Routes(configuration *config.Config) *chi.Mux {
 	userConfig := New(configuration)
 	router := chi.NewRouter()
 
-	router.Get("/login", userConfig.LoginHandler)
+	router.Post("/login", userConfig.LoginHandler)
 
 	return router
 }
