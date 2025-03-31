@@ -18,6 +18,7 @@ L'objectif de StyleSwap est de permettre aux utilisateurs de vendre facilement l
 - **Authentification :** JWT
 - **Documentation API :** Swagger
 
+## A NOTER: PRENDRE LA BRANCHE DEV ET NON MAIN
 
 ## 📄 Documentation API
 
@@ -25,6 +26,8 @@ Doc Postman:
 
 https://documenter.getpostman.com/view/31025137/2sAYQWKtN7
 
+## Dev non répertoriés dans la doc
+Fonction messagerie utilisant un websocket
 **Pour ce qui est du serveur websocket, voici comment procéder:**
 
 https://styleswap-7059.postman.co/workspace/StyleSwap-Workspace~4e439639-a50e-4301-ad0f-b7a9ec0f8e53/collection/6776a59dfbeb7916c7e6f45a?action=share&creator=31025137&active-environment=31025137-6585c1b9-6f66-4dff-b063-8dde845fdab7
@@ -43,6 +46,12 @@ l'API vous crée une session entre vous(id récupérer grâce au token JWT) et l
 l'API récupère la conversation passée (stocké dans la BDD) et vous l'envoie
 
 
+## Devs en cours: 
+
+- **Fonction de payement**
+- **Fonction de recherche** 
+  - recherche par User
+  - recherche par nom d'article
 ---
 **StyleSwap** – Parce que chaque vêtement mérite une seconde vie ! 👗♻️
 
