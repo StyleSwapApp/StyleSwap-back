@@ -66,7 +66,6 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	}
 	defer file.Close()
 
-	// Générer un nom unique pour le fichier sur S3
 	// Lire l'image en binaire
 	imageData, err := io.ReadAll(file)
 	if err != nil {

@@ -20,12 +20,12 @@ func Routes(configuration *config.Config) *chi.Mux {
 
 	// Middleware CORS
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"}, // Tu peux restreindre à certaines origines si nécessaire
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
-		MaxAge:           300, // Cache la réponse pré-vol (OPTIONS) pendant 5 minutes
+		MaxAge:           300,
 	}))
 
 	// Routes publiques
