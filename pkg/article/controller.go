@@ -21,7 +21,6 @@ func New(configuration *config.Config) *ArticleConfig {
 }
 
 // ArticleHandler gère la création d'un nouvel article
-
 func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse la requête multipart pour obtenir les données de formulaire
 	err := r.ParseMultipartForm(10 << 20) // Limite de taille de 10 Mo pour l'image
@@ -44,24 +43,27 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("name")
 	priceStr := r.FormValue("price")
 	price, err := strconv.Atoi(priceStr)
-	utils.HandleError(err, "Error while converting price to integer")
+	if err != nil || price <= 0 {
+		render.JSON(w, r, map[string]string{"error": "Invalid price value"})
+		return
+	}
 	size := r.FormValue("size")
 	brand := r.FormValue("brand")
 	color := r.FormValue("color")
 	description := r.FormValue("description")
 
 	// Vérification que tous les champs sont fournis
-	if name == "" || price == 0 || description == "" {
+	if name == "" || price <= 0 || description == "" || size == "" || brand == "" || color == "" {
 		render.JSON(w, r, map[string]string{"error": "Missing required fields"})
 		return
-	}
-	if size == "" || brand == "" || color == "" {
-		render.JSON(w, r, map[string]string{"Help": "Vous devriez remplir tous les champs"})
 	}
 
 	// Récupérer le fichier de la requête (champ "image")
 	file, _, err := r.FormFile("image")
-	utils.HandleError(err, "Error retrieving image from form data")
+	if err != nil {
+		render.JSON(w, r, map[string]string{"error": "Missing image file"})
+		return
+	}
 	defer file.Close()
 
 	// Générer un nom unique pour le fichier sur S3
@@ -95,7 +97,6 @@ func (config *ArticleConfig) ArticleHandler(w http.ResponseWriter, r *http.Reque
 }
 
 // Vérifie que l'utilisateur est autorisé à avoir une action sur l'article
-
 func VerifArticle(config *ArticleConfig, article *dbmodel.ArticleEntry, w http.ResponseWriter, r *http.Request) {
 	user, ok := auth.GetUserIDFromContext(r.Context())
 	if ok {

@@ -4,9 +4,9 @@ services:
     build:
       context: .
     ports:
-      - "8080:8080"  # Expose le port de l'application
+      - "8080:8080"
     environment:
-      DB_HOST: mysql  # Utilisation du nom du service MySQL
+      DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD}
@@ -14,12 +14,12 @@ services:
     networks:
       - my_network
     depends_on:
-      - mysql  # Assure-toi que MySQL est lancé avant l'API Go
+      - mysql
 
   mysql:
     image: "mysql:latest"
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}  # Définit le mot de passe du root
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3310:3306"
@@ -30,7 +30,7 @@ services:
 
 networks:
   my_network:
-    external: true  # Utilise le réseau Docker externe
+    driver: bridge  
 
 volumes:
   mysql_data:

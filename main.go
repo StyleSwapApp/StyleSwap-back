@@ -12,16 +12,27 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 )
 
 func Routes(configuration *config.Config) *chi.Mux {
 	router := chi.NewRouter()
 
-	// Appliquer les middleware globalement ou sur un groupe de routes non protégées ici
-	router.Mount("/api/v1/register", register.Routes(configuration)) // Route non protégée
+	// Middleware CORS
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Tu peux restreindre à certaines origines si nécessaire
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Cache la réponse pré-vol (OPTIONS) pendant 5 minutes
+	}))
+
+	// Routes publiques
+	router.Mount("/api/v1/register", register.Routes(configuration))
 	router.Mount("/api/v1/login", login.Routes(configuration))
 
-	// Protéger les routes spécifiques avec le middleware d'authentification
+	// Routes protégées
 	router.Group(func(r chi.Router) {
 		r.Use(auth.AuthMiddleware("StyleSwap"))
 		r.Mount("/api/v1/articles", article.Routes(configuration))
